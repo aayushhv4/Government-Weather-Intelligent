@@ -9,7 +9,7 @@
       "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
     },
     {
-      "source": "/platform/*",
+      "source": "/platform/:path*",
       "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
     }
   ]
