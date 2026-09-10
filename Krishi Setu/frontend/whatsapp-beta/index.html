@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Krishi Setu on WhatsApp — Beta Demo</title>
+<link rel="stylesheet" href="css/whatsapp-demo.css">
+</head>
+<body>
+  <div class="wa-shell">
+
+    <!-- TOP BAR -->
+    <header class="wa-header">
+      <div class="wa-brand">
+        <div class="wa-avatar" aria-hidden="true">🌱</div>
+        <div>
+          <div class="wa-title">Krishi Setu <span class="wa-badge">BETA DEMO</span></div>
+          <div class="wa-sub">WhatsApp Assistant</div>
+        </div>
+      </div>
+      <button id="themeBtn" class="wa-theme" type="button" aria-label="Toggle light or dark mode" title="Toggle Light / Dark mode">🌙</button>
+    </header>
+
+    <!-- DISCLAIMER (visible, not intrusive) -->
+    <div class="wa-disclaimer" role="note">
+      Prototype interface for SIH demonstration. Production WhatsApp Business API integration is not connected.
+    </div>
+
+    <!-- CHAT AREA -->
+    <main class="wa-chat" id="chat" aria-live="polite" aria-label="Krishi Setu WhatsApp assistant conversation"></main>
+
+    <!-- BOTTOM AREA -->
+    <footer class="wa-footer">
+      <div class="wa-footer-row">
+        <button id="homeBtn" class="wa-btn ghost" type="button" title="Back to main menu">← Main Menu</button>
+        <a class="wa-btn solid" href="../LAST_GOV_API_GRAPHS_FINAL.html" target="_blank" rel="noopener" title="Opens the full Krishi Setu dashboard in a new tab">Open Krishi Setu Dashboard ↗</a>
+      </div>
+      <div class="wa-footnote">All demo actions are simulated — nothing here changes the live platform.</div>
+    </footer>
+
+  </div>
+  <script src="js/whatsapp-demo.js"></script>
+</body>
+</html>
