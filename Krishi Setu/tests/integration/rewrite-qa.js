@@ -82,8 +82,9 @@ async function httpMappingTests(BASE) {
     ['/js/main.js', 200, 'javascript', '', '/js/main.js'],
     ['/js/i18n.js', 200, 'javascript', '', '/js/i18n.js'],
     ['/js/auth.js', 200, 'javascript', '', '/js/auth.js'],
-    ['/platform', 200, 'text/html', 'loginPage', '/platform → dashboard'],
-    ['/platform/', 200, 'text/html', 'loginPage', '/platform/ → dashboard (trailing slash)'],
+    ['/platform', 307, '', '', '/platform → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
+    ['/platform/', 307, '', '', '/platform/ → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
+    ['/platform?intent=login', 200, 'text/html', 'loginPage', '/platform?intent=login → dashboard (redirect skipped via missing query guard)'],
     ['/platform/?intent=login', 200, 'text/html', 'loginPage', '/platform/?intent=login → dashboard'],
     ['/platform/dashboard', 200, 'text/html', 'loginPage', '/platform/<deep> → dashboard (SPA fallback)'],
     ['/platform/whatsapp-beta', 307, '', '', '/platform/whatsapp-beta → redirects to index.html (fixes relative assets)', '/index.html'],
@@ -95,11 +96,11 @@ async function httpMappingTests(BASE) {
     ['/whatsapp-beta/css/whatsapp-demo.css', 200, 'text/css', '', '/whatsapp-beta/css/whatsapp-demo.css'],
     ['/whatsapp-beta/js/whatsapp-demo.js', 200, 'javascript', '', '/whatsapp-beta/js/whatsapp-demo.js'],
     ['/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', '/LAST_GOV_API_GRAPHS_FINAL.html (gov footer platform link)'],
-    ['/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'guard redirect target from /platform (guest home bounce)'],
+    ['/public-site/government-version/index.html', 307, '', '', 'guard redirect target → canonical / (exact homepage URL)', '/'],
     ['/public-site/government-version/about.html', 200, 'text/html', 'Krishi Setu', 'guard redirect target subpage'],
     ['/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet at /public-site base'],
     ['/public-site/government-version/js/main.js', 200, 'javascript', '', 'gov js at /public-site base'],
-    ['/platform/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'guard redirect target from /platform/ (NOT the dashboard)'],
+    ['/platform/public-site/government-version/index.html', 307, '', '', 'home/logout relative target from /platform/ → canonical /', '/'],
     ['/platform/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet under /platform/ base'],
     ['/public-site/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', 'gov raw platform link at /public-site base'],
     ['/frontend/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'direct static gov path'],
@@ -216,32 +217,47 @@ async function bridgeTests(BASE) {
   });
   check('bridge: guest Open Platform → /platform/?intent=login → login page (NO 404)', login.path === '/platform/' && login.query === '?intent=login' && login.loginActive, login);
 
-  // D2–D4 — guests opening the app directly must land on the public homepage, not 404/loop
-  for (const direct of ['/platform', '/platform/', '/LAST_GOV_API_GRAPHS_FINAL.html']) {
+  // D2–D3 — CASE 2: guest direct /platform and /platform/ → existing login flow, NOT 404
+  for (const direct of ['/platform', '/platform/']) {
     const before = snapshot();
     await page.goto(BASE + direct, { waitUntil: 'load', timeout: 45000 });
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 3500));
+    const r = await page.evaluate(() => {
+      const l = document.getElementById('loginPage');
+      return {
+        url: location.href,
+        loginActive: !!l && l.classList.contains('active') && getComputedStyle(l).display !== 'none',
+      };
+    });
+    const newLocalErrs = snapshot().bad.filter(u => !isBenign(u)).length + snapshot().failed.filter(u => !isBenign(u)).length - (before.bad.filter(u => !isBenign(u)).length + before.failed.filter(u => !isBenign(u)).length);
+    check('bridge: guest direct ' + direct + ' → existing login flow (CASE 2), no 404', r.url.indexOf('/platform/?intent=login') !== -1 && r.loginActive && newLocalErrs === 0, { url: r.url, loginActive: r.loginActive, newLocalErrs });
+  }
+
+  // D4 — guest direct /LAST_GOV_API_GRAPHS_FINAL.html → guard bounces to public homepage /
+  {
+    const before = snapshot();
+    await page.goto(BASE + '/LAST_GOV_API_GRAPHS_FINAL.html', { waitUntil: 'load', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 2500));
     const r = await page.evaluate(() => ({
       url: location.href,
       green: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
       bodyBg: getComputedStyle(document.body).backgroundColor,
-      title: document.title,
     }));
-    const onGov = /public-site\/government-version\/index\.html/.test(r.url) || r.url.replace(/\/$/, '') === BASE;
+    const onRoot = r.url.replace(/\/$/, '') === BASE;
     const styled = r.green === '#0d5c31' && r.bodyBg === 'rgb(246, 248, 245)';
     const newLocalErrs = snapshot().bad.filter(u => !isBenign(u)).length + snapshot().failed.filter(u => !isBenign(u)).length - (before.bad.filter(u => !isBenign(u)).length + before.failed.filter(u => !isBenign(u)).length);
-    check('bridge: guest direct ' + direct + ' → public homepage, styled, no 404', onGov && styled && newLocalErrs === 0, { url: r.url, styled, newLocalErrs });
+    check('bridge: guest direct /LAST_GOV_API_GRAPHS_FINAL.html → public homepage / (no 404/loop)', onRoot && styled && newLocalErrs === 0, { url: r.url, styled, newLocalErrs });
   }
 
-  // D5 — login page's home link → public homepage
+  // D5 — login page's home link → public homepage /
   await page.goto(BASE + '/platform/?intent=login', { waitUntil: 'load', timeout: 45000 });
   await new Promise(r => setTimeout(r, 3000));
   await page.evaluate(() => { setTimeout(() => { window.goPublicHome(); }, 50); });
-  await page.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
-    .then(() => check('bridge: login-page home link → public homepage', true))
-    .catch(() => check('bridge: login-page home link → public homepage', false, { url: page.url() }));
+  await page.waitForFunction(() => window.location.pathname === '/', { timeout: 15000 })
+    .then(() => check('bridge: login-page home link → public homepage /', true))
+    .catch(() => check('bridge: login-page home link → public homepage /', false, { url: page.url() }));
 
-  // D6 — authed direct open → dashboard, no login (requirement 3)
+  // D6 — CASE 4: authed direct /platform/ → dashboard, no login
   const p2 = await browser.newPage();
   await p2.setViewport({ width: 1280, height: 900 });
   await p2.evaluateOnNewDocument(() => {
@@ -271,14 +287,15 @@ async function bridgeTests(BASE) {
       Object.defineProperty(window, 'supabase', { configurable: false, enumerable: true, get: () => ({ createClient: () => stubClient }), set: () => {} });
     } catch (e) { window.supabase = { createClient: () => stubClient }; }
   });
-  await p2.goto(BASE + '/platform', { waitUntil: 'load', timeout: 45000 });
+  await p2.goto(BASE + '/platform/', { waitUntil: 'load', timeout: 45000 });
   await new Promise(r => setTimeout(r, 3500));
   const authed = await p2.evaluate(() => ({
     loggedIn: window.isLoggedIn,
     loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null,
     path: location.pathname,
+    query: location.search,
   }));
-  check('bridge: authed direct /platform → dashboard directly, no login', authed.loggedIn === true && authed.loginActive === false && authed.path === '/platform', authed);
+  check('bridge: authed direct /platform/ → dashboard directly (CASE 4), no login', authed.loggedIn === true && authed.loginActive === false && authed.path === '/platform/' && authed.query === '?intent=login', authed);
 
   // D6b — authed user CLICKS "Open Platform" from / → dashboard directly, no second login (requirement 3)
   await p2.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
@@ -294,29 +311,29 @@ async function bridgeTests(BASE) {
   }));
   check('bridge: authed CTA click → dashboard directly (no second login)', authedClick.path === '/platform/' && authedClick.query === '?intent=login' && authedClick.loggedIn === true && authedClick.loginActive === false, authedClick);
 
-  // D7 — dashboard home → public homepage (requirement 4)
+  // D7 — CASE 5: dashboard home (logo) → public homepage /
   await p2.evaluate(() => { setTimeout(() => { window.goPublicHome(); }, 50); });
-  await p2.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
-    .then(() => check('bridge: dashboard home → public homepage', true))
-    .catch(() => check('bridge: dashboard home → public homepage', false, { url: p2.url() }));
+  await p2.waitForFunction(() => window.location.pathname === '/', { timeout: 15000 })
+    .then(() => check('bridge: dashboard home → public homepage / (CASE 5)', true))
+    .catch(() => check('bridge: dashboard home → public homepage / (CASE 5)', false, { url: p2.url() }));
 
-  // D8 — logout → public homepage; Open Platform → login again (requirements 5–6)
-  await p2.goto(BASE + '/platform', { waitUntil: 'load', timeout: 45000 });
+  // D8 — CASE 6: logout → public homepage /
+  await p2.goto(BASE + '/platform/', { waitUntil: 'load', timeout: 45000 });
   await new Promise(r => setTimeout(r, 2500));
   await p2.evaluate(() => { setTimeout(() => { window.logout(); }, 50); });
-  await p2.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
-    .then(() => check('bridge: logout → public homepage', true))
-    .catch(() => check('bridge: logout → public homepage', false, { url: p2.url() }));
-  await p2.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
-  await new Promise(r => setTimeout(r, 2000));
-  await p2.click('a[href*="intent=login"]');
-  await p2.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
-  await new Promise(r => setTimeout(r, 3000));
+  await p2.waitForFunction(() => window.location.pathname === '/', { timeout: 15000 })
+    .then(() => check('bridge: logout → public homepage / (CASE 6)', true))
+    .catch(() => check('bridge: logout → public homepage / (CASE 6)', false, { url: p2.url() }));
+
+  // CASE 7 — after logout, /platform/ → login again
+  await p2.goto(BASE + '/platform/', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 3500));
   const relogin = await p2.evaluate(() => ({
     loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null,
     path: location.pathname,
+    loggedIn: window.isLoggedIn,
   }));
-  check('bridge: after logout, Open Platform → login again', relogin.path === '/platform/' && relogin.loginActive === true, relogin);
+  check('bridge: after logout, /platform/ → login again (CASE 7)', relogin.path === '/platform/' && relogin.loginActive === true && relogin.loggedIn === false, relogin);
   await p2.close();
 
   const fixRelated = badResponses.filter(u => !isBenign(u));

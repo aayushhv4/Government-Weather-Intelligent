@@ -7,6 +7,36 @@
     {
       "source": "/platform/whatsapp-beta",
       "destination": "/platform/whatsapp-beta/index.html"
+    },
+
+    {
+      "source": "/platform",
+      "destination": "/platform/?intent=login",
+      "missing": [
+        {
+          "type": "query",
+          "key": "intent"
+        }
+      ]
+    },
+    {
+      "source": "/platform/",
+      "destination": "/platform/?intent=login",
+      "missing": [
+        {
+          "type": "query",
+          "key": "intent"
+        }
+      ]
+    },
+
+    {
+      "source": "/public-site/government-version/index.html",
+      "destination": "/"
+    },
+    {
+      "source": "/platform/public-site/government-version/index.html",
+      "destination": "/"
     }
   ],
 

@@ -85,7 +85,7 @@ function compileSource(source) {
 function compileRules(rewrites) {
   return rewrites.map(r => {
     const c = compileSource(r.source);
-    return { source: r.source, destination: r.destination, re: c.re, params: c.params };
+    return { source: r.source, destination: r.destination, re: c.re, params: c.params, has: r.has || [], missing: r.missing || [] };
   });
 }
 
@@ -109,6 +109,8 @@ function loadConfig(projectRoot) {
       source: r.source,
       destination: r.destination,
       permanent: !!r.permanent,
+      has: r.has || [],
+      missing: r.missing || [],
     })),
   };
 }
@@ -136,17 +138,29 @@ function start(projectRoot, port = 0) {
     const query = qIdx === -1 ? '' : rawUrl.slice(qIdx); // keep exact query string
 
     // 1) Redirects — matched before rewrites (Vercel order: headers → redirects → rewrites → filesystem)
+    const params = new URLSearchParams(query);
+    function conditionsOk(conds, wantPresent) {
+      for (const c of (conds || [])) {
+        if (c.type !== 'query') continue;
+        const present = params.has(c.key) && (c.value === undefined || params.get(c.key) === c.value);
+        if (present !== wantPresent) return false;
+      }
+      return true;
+    }
     for (const rule of redirectRules) {
       const m = rule.re.exec(pathname);
-      if (m) {
-        const dest = applyDestination(rule.destination, m, rule.params);
-        res.writeHead(rule.permanent ? 308 : 307, {
-          Location: dest + query,
-          'Content-Type': 'text/plain; charset=utf-8',
-        });
-        res.end('Redirecting to ' + dest + query);
-        return;
-      }
+      if (!m) continue;
+      if (!conditionsOk(rule.missing, false)) continue;
+      if (!conditionsOk(rule.has, true)) continue;
+      const dest = applyDestination(rule.destination, m, rule.params);
+      // Vercel: a query string in the destination replaces the original query
+      const location = dest.indexOf('?') !== -1 ? dest : dest + query;
+      res.writeHead(rule.permanent ? 308 : 307, {
+        Location: location,
+        'Content-Type': 'text/plain; charset=utf-8',
+      });
+      res.end('Redirecting to ' + location);
+      return;
     }
 
     // 2) Rewrites — first match wins
