@@ -20,13 +20,15 @@ works locally and when hosted — no URL rewriting is required.
 | Install Command  | None                                       |
 | Framework Preset | **Other**                                  |
 
-No `vercel.json` is needed: the site is plain static HTML/CSS/JS, all pages
-are real `.html` files (refresh-safe), and there is no SPA router to rewrite.
+A `vercel.json` **is** now included (`Krishi Setu/vercel.json`):
 
-Important: the git repository must be initialized **at the workspace root**,
-not inside `Krishi Setu/`. The root `index.html` is the front door — without
-it, `https://your-domain/` would 404. The root `.gitignore` already excludes
-the backup folders and local tooling.
+- `/` is rewritten to `/frontend/public-site/government-version/index.html` — the
+  Government public homepage is the default entry point.
+- `/platform` and `/platform/*` are rewritten to
+  `/frontend/LAST_GOV_API_GRAPHS_FINAL.html` — the authenticated dashboard.
+
+The Vercel root directory is still `.` on the repo root (the folder containing
+`index.html` and `Krishi Setu/`).
 
 ---
 
@@ -94,8 +96,10 @@ fully offline with its labeled demo mandi data.
 | Email redirect URL     | `frontend/LAST_GOV_API_GRAPHS_FINAL.html` → `KRISHISETU_APP_URL` / `getAuthRedirectUrl()` |
 | WhatsApp Beta links    | dashboard cards + sidebar pill → `whatsapp-beta/index.html?role=...`      |
 
-All are relative paths and need no change for deployment — they are listed
-here so a future restructure has a single source to update.
+## 3b. Handled automatically by the front-door fix in this pass
+
+- Public → platform URL is now `/platform/` (set once in `data.js`; `auth.js` appends `?intent=login` for guests).
+- Platform-side navigation (dashboard logo, sidebar pill, WhatsApp cards) remains the existing relative path to the app file.
 
 ---
 

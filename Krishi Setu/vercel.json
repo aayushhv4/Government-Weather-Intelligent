@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/frontend/public-site/government-version/index.html"
+    },
+    {
+      "source": "/platform",
+      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+    },
+    {
+      "source": "/platform/*",
+      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+    }
+  ]
+}

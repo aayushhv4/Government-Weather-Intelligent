@@ -9,7 +9,7 @@
 const KS = {
   brand: 'Krishi Setu',
   tagline: 'Farm. Connect. Prosper.',
-  platformUrl: '../../LAST_GOV_API_GRAPHS_FINAL.html',
+  platformUrl: '/platform/',
 
   /* ---- What we are (used on home + about) ---- */
   whatIs: 'Krishi Setu connects Indian farmers, FPOs and institutional buyers in one agricultural OS — live mandi prices, direct farm-gate deals, AI crop care, cold-chain logistics, storage and government schemes.',

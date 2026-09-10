@@ -38,7 +38,12 @@
      The ?intent=login param tells the app to show its existing login
      screen for guests (authenticated visitors skip it automatically). */
   function platformUrl() {
-    return (window.KS && KS.platformUrl) || '../../LAST_GOV_API_GRAPHS_FINAL.html';
+    var p = (window.KS && KS.platformUrl) || '/platform/';
+    /* Ensure a normalized route with a trailing slash, so the
+       ?intent=login query param is a query string and never
+       collides with the /platform path segment on Vercel. */
+    if (typeof p !== 'string') p = '/platform/';
+    return p.endsWith('/') ? p : p + '/';
   }
   function platformHref(authed) {
     /* Authenticated visitors do NOT carry ?intent=login: the app's
@@ -47,7 +52,8 @@
        need the intent param so the app shows its existing login. */
     if (authed) return platformUrl();
     var base = platformUrl();
-    return base + (base.indexOf('?') === -1 ? '?intent=login' : '&intent=login');
+    var sep = base.indexOf('?') === -1 ? '?' : '&';
+    return base + sep + 'intent=login';
   }
 
   function collectLinks() {
