@@ -342,6 +342,124 @@ async function bridgeTests(BASE) {
   await browser.close();
 }
 
+// ------------------------------------------------- responsive + role checks
+async function responsiveTests(BASE) {
+  console.log('\n=== E. Responsive sweep 360–1280 (no overflow, no console errors) ===');
+  const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
+  const widths = [360, 390, 430, 768, 1024, 1280];
+  const pages = ['/', '/platform/?intent=login', '/whatsapp-beta'];
+  for (const w of widths) {
+    for (const p of pages) {
+      const page = await browser.newPage();
+      await page.setViewport({ width: w, height: 900 });
+      const errs = [];
+      const bad = [];
+      page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 120)); });
+      page.on('response', r => { if (r.status() >= 400 && !/supabase\.co|jsdelivr\.net|favicon/i.test(r.url())) bad.push(r.status() + ' ' + r.url()); });
+      await page.goto(BASE + p, { waitUntil: 'load', timeout: 45000 });
+      await new Promise(r => setTimeout(r, 1800));
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      check('responsive ' + w + 'px ' + p + ': no overflow, no errors', !ov && errs.length === 0 && bad.length === 0, { overflow: ov, errs: errs.slice(0, 2), bad: bad.slice(0, 2) });
+      await page.close();
+    }
+  }
+  // authed dashboard at narrow + desktop
+  for (const w of [360, 1280]) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: w, height: 900 });
+    const errs = [];
+    page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 120)); });
+    await page.evaluateOnNewDocument(() => {
+      const stubClient = {
+        auth: {
+          getSession: async () => ({ data: { session: { user: { id: 'u-live', email: 'farmer@demo.in', user_metadata: { full_name: 'Ramesh Patil', role: 'farmer' } } } } }),
+          onAuthStateChange: () => ({ unsubscribe: () => {} }),
+          signOut: async () => ({ error: null }),
+        },
+        from: () => ({ select: async () => ({ data: [], error: null }), eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+        storage: { from: () => ({ list: async () => ({ data: [], error: null }), remove: async () => ({ error: null }) }) },
+      };
+      try {
+        localStorage.setItem('sb-lryhcszcmhlrzrbrsces-auth-token', '{"access_token":"stub","expires_at":4102444800,"user":{"id":"u-live","email":"farmer@demo.in"}}');
+        localStorage.setItem('krishiSetuDemoLoggedIn', '1');
+      } catch (e) {}
+      try {
+        Object.defineProperty(window, 'supabase', { configurable: false, enumerable: true, get: () => ({ createClient: () => stubClient }), set: () => {} });
+      } catch (e) { window.supabase = { createClient: () => stubClient }; }
+    });
+    await page.goto(BASE + '/platform/', { waitUntil: 'load', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 3000));
+    const r = await page.evaluate(() => ({
+      ov: document.documentElement.scrollWidth > window.innerWidth + 1,
+      loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null,
+    }));
+    check('responsive authed dashboard @' + w + 'px: no overflow, dashboard shown, no errors', !r.ov && r.loginActive === false && errs.length === 0, r);
+    await page.close();
+  }
+  await browser.close();
+}
+
+async function roleTests(BASE) {
+  console.log('\n=== F. Role-based WhatsApp Beta visibility (farmer/buyer/supervisor) ===');
+  const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
+  for (const [role, wantVisible, hrefPart] of [['farmer', true, 'role=farmer'], ['buyer', true, 'role=buyer'], ['supervisor', false, null]]) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 900 });
+    const errs = [];
+    page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 120)); });
+    await page.evaluateOnNewDocument(() => {
+      const stubClient = {
+        auth: {
+          getSession: async () => ({ data: { session: { user: { id: 'u-live', email: 'farmer@demo.in', user_metadata: { full_name: 'Ramesh Patil', role: 'farmer' } } } } }),
+          onAuthStateChange: () => ({ unsubscribe: () => {} }),
+          signOut: async () => ({ error: null }),
+        },
+        from: () => ({ select: async () => ({ data: [], error: null }), eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+        storage: { from: () => ({ list: async () => ({ data: [], error: null }), remove: async () => ({ error: null }) }) },
+      };
+      try {
+        localStorage.setItem('sb-lryhcszcmhlrzrbrsces-auth-token', '{"access_token":"stub","expires_at":4102444800,"user":{"id":"u-live","email":"farmer@demo.in"}}');
+        localStorage.setItem('krishiSetuDemoLoggedIn', '1');
+      } catch (e) {}
+      try {
+        Object.defineProperty(window, 'supabase', { configurable: false, enumerable: true, get: () => ({ createClient: () => stubClient }), set: () => {} });
+      } catch (e) { window.supabase = { createClient: () => stubClient }; }
+    });
+    await page.goto(BASE + '/platform/', { waitUntil: 'load', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 2500));
+    await page.evaluate(r => { try { window.demoLogin(r); } catch (e) {} }, role);
+    await new Promise(r => setTimeout(r, 1500));
+    const r = await page.evaluate(() => {
+      const nav = document.querySelector('.nav-whatsapp');
+      const navVis = nav ? getComputedStyle(nav).display !== 'none' : false;
+      const navHref = nav ? nav.getAttribute('href') : '';
+      const buyerCta = document.querySelector('.ks-wa-cta');
+      return { navVis, navHref, buyerCtaHref: buyerCta ? buyerCta.getAttribute('href') : '', role: window.currentRole };
+    });
+    check(role + ': WhatsApp Beta ' + (wantVisible ? 'visible' : 'hidden') + ' in dashboard', r.navVis === wantVisible, r);
+    if (hrefPart) check(role + ': WhatsApp link carries role param ' + hrefPart, (r.navHref + ' ' + r.buyerCtaHref).indexOf(hrefPart) !== -1, { navHref: r.navHref, buyerCtaHref: r.buyerCtaHref });
+    check(role + ': zero console errors', errs.length === 0, { errs: errs.slice(0, 3) });
+    await page.close();
+  }
+  // WhatsApp Beta page renders with role params + BETA/SIH labeling
+  for (const q of ['?role=farmer', '?role=buyer']) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 430, height: 900 });
+    const errs = [];
+    page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 120)); });
+    await page.goto(BASE + '/whatsapp-beta/' + q, { waitUntil: 'load', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 1200));
+    const r = await page.evaluate(() => ({
+      chat: !!document.getElementById('chat'),
+      beta: (document.body.textContent || '').indexOf('BETA DEMO') !== -1 || (document.body.textContent || '').indexOf('Prototype') !== -1,
+      ov: document.documentElement.scrollWidth > window.innerWidth + 1,
+    }));
+    check('whatsapp-beta' + q + ': renders, BETA labeling kept, no overflow, no errors', r.chat && r.beta && !r.ov && errs.length === 0, r);
+    await page.close();
+  }
+  await browser.close();
+}
+
 // ------------------------------------------------------------------ browser
 async function browserTests(BASE) {
   console.log('\n=== C. Real-browser rendering (styled pages, JS ran, navigation, login flow) ===');
@@ -432,6 +550,8 @@ async function browserTests(BASE) {
   await crawlTests(BASE);
   await browserTests(BASE);
   await bridgeTests(BASE);
+  await responsiveTests(BASE);
+  await roleTests(BASE);
 
   server.close();
   console.log('\n==============================================');
