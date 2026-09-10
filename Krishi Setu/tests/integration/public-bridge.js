@@ -172,16 +172,16 @@ function check(name, ok, extra) {
     await page.goto(GOV_INDEX, { waitUntil: 'networkidle2', timeout: 60000 });
     await new Promise(r => setTimeout(r, 1500));
     const r = await page.evaluate(() => {
-      const links = [...document.querySelectorAll('a[href*="LAST_GOV_API_GRAPHS_FINAL.html"]')];
+      const links = [...document.querySelectorAll('a[data-i18n-authed]')];
       return {
         count: links.length,
-        hrefsOk: links.every(a => a.getAttribute('href') && a.getAttribute('href').indexOf('LAST_GOV_API_GRAPHS_FINAL.html') !== -1),
+        hrefsOk: links.every(a => a.getAttribute('href') === '/platform/?intent=login'),
         labels: links.map(a => a.textContent.trim()).slice(0, 4),
         wide: document.documentElement.scrollWidth > window.innerWidth + 1
       };
     });
     check(`guest@${w} platform links count`, r.count >= 4, { count: r.count });
-    check(`guest@${w} hrefs point at platform file (single source)`, r.hrefsOk);
+    check(`guest@${w} all CTAs resolve to the single platform route with ?intent=login`, r.hrefsOk);
     check(`guest@${w} labels default to Open`, r.labels.every(t => /open/i.test(t)), { labels: r.labels });
     check(`guest@${w} no horizontal overflow`, !r.wide);
     check(`guest@${w} zero page errors`, errs.length === 0, { errs });
@@ -208,16 +208,20 @@ function check(name, ok, extra) {
     await page.goto(GOV_INDEX, { waitUntil: 'networkidle2', timeout: 60000 });
     await new Promise(r => setTimeout(r, 1200));
     const r = await page.evaluate(() => {
-      const links = [...document.querySelectorAll('a[href*="LAST_GOV_API_GRAPHS_FINAL.html"]')];
+      const links = [...document.querySelectorAll('a[data-i18n-authed]')];
       return {
-        allAuthedLabel: links.every(a => a.textContent.trim() === 'Go to Dashboard →'),
-        authStates: [...new Set(links.map(a => a.dataset.authState))],
-        count: links.length
+        count: links.length,
+        hrefsOk: links.every(a => a.getAttribute('href') && a.getAttribute('href').indexOf('/platform/') === 0),
+        hrefs: [...new Set(links.map(a => a.getAttribute('href')))],
+        labels: [...new Set(links.map(a => a.textContent.trim()))]
       };
     });
-    check('authed CTA flips to "Go to Dashboard" on all links', r.allAuthedLabel, { count: r.count, states: r.authStates });
-    check('authed data-auth-state=in', r.authStates.length === 1 && r.authStates[0] === 'in', { states: r.authStates });
+    check('authed CTA count', r.count >= 4, { count: r.count });
+    check('authed CTAs all point at the single /platform/ route', r.hrefsOk, { hrefs: r.hrefs });
     check('authed zero page errors', errs.length === 0, { errs });
+    // NOTE: the CTA *click* flow (authed → dashboard directly) is exercised over
+    // real HTTP routing in tests/integration/rewrite-qa.js section D — absolute
+    // /platform/ hrefs cannot resolve on file:// URLs, so it can't be tested here.
     await page.close();
   }
 
@@ -271,10 +275,11 @@ function check(name, ok, extra) {
     await new Promise(r => setTimeout(r, 1200));
     const r = await page.evaluate(() => ({
       newsCards: document.querySelectorAll('.news-card').length,
-      platformLinks: document.querySelectorAll('a[href*="LAST_GOV_API_GRAPHS_FINAL.html"]').length
+      platformLinks: document.querySelectorAll('a[data-i18n-authed]').length,
+      hrefsOk: [...document.querySelectorAll('a[data-i18n-authed]')].every(a => a.getAttribute('href') === '/platform/?intent=login')
     }));
     check('news page still renders 6 stories', r.newsCards === 6, { cards: r.newsCards });
-    check('news page platform links wired', r.platformLinks >= 2, { links: r.platformLinks });
+    check('news page platform links wired to /platform/?intent=login', r.platformLinks >= 2 && r.hrefsOk, { links: r.platformLinks });
     check('news page zero page errors', errs.length === 0, { errs });
     await page.close();
   }

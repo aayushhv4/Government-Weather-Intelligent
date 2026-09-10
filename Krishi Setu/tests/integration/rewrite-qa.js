@@ -95,6 +95,13 @@ async function httpMappingTests(BASE) {
     ['/whatsapp-beta/css/whatsapp-demo.css', 200, 'text/css', '', '/whatsapp-beta/css/whatsapp-demo.css'],
     ['/whatsapp-beta/js/whatsapp-demo.js', 200, 'javascript', '', '/whatsapp-beta/js/whatsapp-demo.js'],
     ['/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', '/LAST_GOV_API_GRAPHS_FINAL.html (gov footer platform link)'],
+    ['/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'guard redirect target from /platform (guest home bounce)'],
+    ['/public-site/government-version/about.html', 200, 'text/html', 'Krishi Setu', 'guard redirect target subpage'],
+    ['/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet at /public-site base'],
+    ['/public-site/government-version/js/main.js', 200, 'javascript', '', 'gov js at /public-site base'],
+    ['/platform/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'guard redirect target from /platform/ (NOT the dashboard)'],
+    ['/platform/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet under /platform/ base'],
+    ['/public-site/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', 'gov raw platform link at /public-site base'],
     ['/frontend/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'direct static gov path'],
     ['/frontend/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', 'direct static dashboard path'],
     ['/frontend/whatsapp-beta/index.html', 200, 'text/html', 'whatsapp', 'direct static whatsapp path'],
@@ -130,6 +137,7 @@ async function crawlTests(BASE) {
     '/', '/about.html', '/how-it-works.html', '/schemes.html', '/news.html',
     '/news-article.html?id=news1', '/resources.html', '/impact.html', '/support.html', '/contact.html',
     '/platform', '/platform/?intent=login', '/whatsapp-beta', '/platform/whatsapp-beta',
+    '/public-site/government-version/index.html', '/platform/public-site/government-version/index.html',
   ];
   const seen = new Set();
   const broken = [];
@@ -165,6 +173,156 @@ async function crawlTests(BASE) {
     }
   }
   check('crawled ' + seen.size + ' unique URLs, 0 broken', broken.length === 0, broken.length ? broken.slice(0, 10) : undefined);
+}
+
+// --------------------------------------- public ⇄ platform bridge (routing)
+async function bridgeTests(BASE) {
+  console.log('\n=== D. Public ⇄ platform auth bridge over Vercel routing ===');
+  const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
+  const consoleErrors = [];
+  const badResponses = [];
+  const failedReqs = [];
+  const isBenign = u => /supabase\.co|jsdelivr\.net|fonts\.|favicon\.ico/i.test(u);
+  const snapshot = () => ({
+    consoleErrors: consoleErrors.slice(),
+    bad: badResponses.slice(),
+    failed: failedReqs.slice(),
+  });
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1280, height: 900 });
+  page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text().slice(0, 160)); });
+  page.on('response', res => { if (res.status() >= 400) badResponses.push(res.status() + ' ' + res.url()); });
+  page.on('requestfailed', req => failedReqs.push((req.failure() || {}).errorText + ' ' + req.url()));
+
+  // D1 — guest clicks "Open Platform" from / → login page (requirement 2)
+  await page.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 2000));
+  const ctaHref = await page.evaluate(() => {
+    const a = document.querySelector('.header-actions a.btn-primary, a[href*="intent=login"]');
+    return a ? a.getAttribute('href') : null;
+  });
+  check('bridge: guest CTA generated from KS.platformUrl with ?intent=login', ctaHref === '/platform/?intent=login', { href: ctaHref });
+  await page.click('a[href*="intent=login"]');
+  await page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
+  await new Promise(r => setTimeout(r, 3500));
+  const login = await page.evaluate(() => {
+    const l = document.getElementById('loginPage');
+    return {
+      path: location.pathname,
+      query: location.search,
+      loginActive: !!l && l.classList.contains('active') && getComputedStyle(l).display !== 'none',
+      url: location.href,
+    };
+  });
+  check('bridge: guest Open Platform → /platform/?intent=login → login page (NO 404)', login.path === '/platform/' && login.query === '?intent=login' && login.loginActive, login);
+
+  // D2–D4 — guests opening the app directly must land on the public homepage, not 404/loop
+  for (const direct of ['/platform', '/platform/', '/LAST_GOV_API_GRAPHS_FINAL.html']) {
+    const before = snapshot();
+    await page.goto(BASE + direct, { waitUntil: 'load', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 2000));
+    const r = await page.evaluate(() => ({
+      url: location.href,
+      green: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+      bodyBg: getComputedStyle(document.body).backgroundColor,
+      title: document.title,
+    }));
+    const onGov = /public-site\/government-version\/index\.html/.test(r.url) || r.url.replace(/\/$/, '') === BASE;
+    const styled = r.green === '#0d5c31' && r.bodyBg === 'rgb(246, 248, 245)';
+    const newLocalErrs = snapshot().bad.filter(u => !isBenign(u)).length + snapshot().failed.filter(u => !isBenign(u)).length - (before.bad.filter(u => !isBenign(u)).length + before.failed.filter(u => !isBenign(u)).length);
+    check('bridge: guest direct ' + direct + ' → public homepage, styled, no 404', onGov && styled && newLocalErrs === 0, { url: r.url, styled, newLocalErrs });
+  }
+
+  // D5 — login page's home link → public homepage
+  await page.goto(BASE + '/platform/?intent=login', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 3000));
+  await page.evaluate(() => { setTimeout(() => { window.goPublicHome(); }, 50); });
+  await page.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
+    .then(() => check('bridge: login-page home link → public homepage', true))
+    .catch(() => check('bridge: login-page home link → public homepage', false, { url: page.url() }));
+
+  // D6 — authed direct open → dashboard, no login (requirement 3)
+  const p2 = await browser.newPage();
+  await p2.setViewport({ width: 1280, height: 900 });
+  await p2.evaluateOnNewDocument(() => {
+    try {
+      localStorage.setItem('sb-lryhcszcmhlrzrbrsces-auth-token',
+        JSON.stringify({ access_token: 'stub-access', token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, refresh_token: 'stub-refresh', user: { id: 'u-live', email: 'farmer@demo.in', user_metadata: { full_name: 'Ramesh Patil', role: 'farmer' } } }));
+      localStorage.setItem('krishiSetuDemoLoggedIn', '1');
+    } catch (e) {}
+    const chain = () => ({ select: chain, eq: chain, order: chain, limit: chain, maybeSingle: async () => ({ data: null, error: null }), single: async () => ({ data: null, error: null }), insert: async () => ({ data: null, error: null }), update: async () => ({ data: null, error: null }), upsert: async () => ({ data: null, error: null }), delete: async () => ({ data: null, error: null }) });
+    const stubClient = {
+      auth: {
+        // mirrors real Supabase: after signOut (flag set), no session exists
+        getSession: async () => {
+          let out = null;
+          try { if (localStorage.getItem('__stubLoggedOut') !== '1') out = { user: { id: 'u-live', email: 'farmer@demo.in', user_metadata: { full_name: 'Ramesh Patil', role: 'farmer' } } }; } catch (e) {}
+          return { data: { session: out } };
+        },
+        onAuthStateChange: () => ({ unsubscribe: () => {} }),
+        signOut: async () => { try { localStorage.removeItem('sb-lryhcszcmhlrzrbrsces-auth-token'); localStorage.removeItem('krishiSetuDemoLoggedIn'); localStorage.setItem('__stubLoggedOut', '1'); } catch (e) {} return { error: null }; },
+        signInWithPassword: async () => ({ data: {}, error: { message: 'stub' } }),
+        signUp: async () => ({ data: {}, error: { message: 'stub' } }),
+      },
+      from: () => chain(),
+      storage: { from: () => ({ list: async () => ({ data: [], error: null }), remove: async () => ({ error: null }) }) },
+    };
+    try {
+      Object.defineProperty(window, 'supabase', { configurable: false, enumerable: true, get: () => ({ createClient: () => stubClient }), set: () => {} });
+    } catch (e) { window.supabase = { createClient: () => stubClient }; }
+  });
+  await p2.goto(BASE + '/platform', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 3500));
+  const authed = await p2.evaluate(() => ({
+    loggedIn: window.isLoggedIn,
+    loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null,
+    path: location.pathname,
+  }));
+  check('bridge: authed direct /platform → dashboard directly, no login', authed.loggedIn === true && authed.loginActive === false && authed.path === '/platform', authed);
+
+  // D6b — authed user CLICKS "Open Platform" from / → dashboard directly, no second login (requirement 3)
+  await p2.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 2000));
+  await p2.click('a[data-i18n-authed]');
+  await p2.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
+  await new Promise(r => setTimeout(r, 3500));
+  const authedClick = await p2.evaluate(() => ({
+    path: location.pathname,
+    query: location.search,
+    loggedIn: window.isLoggedIn,
+    loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null
+  }));
+  check('bridge: authed CTA click → dashboard directly (no second login)', authedClick.path === '/platform/' && authedClick.query === '?intent=login' && authedClick.loggedIn === true && authedClick.loginActive === false, authedClick);
+
+  // D7 — dashboard home → public homepage (requirement 4)
+  await p2.evaluate(() => { setTimeout(() => { window.goPublicHome(); }, 50); });
+  await p2.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
+    .then(() => check('bridge: dashboard home → public homepage', true))
+    .catch(() => check('bridge: dashboard home → public homepage', false, { url: p2.url() }));
+
+  // D8 — logout → public homepage; Open Platform → login again (requirements 5–6)
+  await p2.goto(BASE + '/platform', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 2500));
+  await p2.evaluate(() => { setTimeout(() => { window.logout(); }, 50); });
+  await p2.waitForFunction(() => window.location.href.indexOf('public-site/government-version') !== -1, { timeout: 15000 })
+    .then(() => check('bridge: logout → public homepage', true))
+    .catch(() => check('bridge: logout → public homepage', false, { url: p2.url() }));
+  await p2.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
+  await new Promise(r => setTimeout(r, 2000));
+  await p2.click('a[href*="intent=login"]');
+  await p2.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
+  await new Promise(r => setTimeout(r, 3000));
+  const relogin = await p2.evaluate(() => ({
+    loginActive: (document.getElementById('loginPage') || {}).classList ? document.getElementById('loginPage').classList.contains('active') : null,
+    path: location.pathname,
+  }));
+  check('bridge: after logout, Open Platform → login again', relogin.path === '/platform/' && relogin.loginActive === true, relogin);
+  await p2.close();
+
+  const fixRelated = badResponses.filter(u => !isBenign(u));
+  check('bridge: zero 4xx/5xx on local assets across the whole flow', fixRelated.length === 0, fixRelated.slice(0, 5));
+  check('bridge: zero console errors across the whole flow', consoleErrors.length === 0, consoleErrors.slice(0, 5));
+  await browser.close();
 }
 
 // ------------------------------------------------------------------ browser
@@ -232,6 +390,7 @@ async function browserTests(BASE) {
 
   // 5. Errors caused by the fix (local asset resolution)
   const isBenign = u => /supabase\.co|jsdelivr\.net|fonts\.|favicon\.ico/i.test(u);
+
   const fixRelated = badResponses.filter(u => !isBenign(u));
   const envRelated = badResponses.filter(u => isBenign(u));
   check('zero failed local asset requests (4xx/5xx)', fixRelated.length === 0, fixRelated.slice(0, 5));
@@ -255,6 +414,7 @@ async function browserTests(BASE) {
   await httpMappingTests(BASE);
   await crawlTests(BASE);
   await browserTests(BASE);
+  await bridgeTests(BASE);
 
   server.close();
   console.log('\n==============================================');

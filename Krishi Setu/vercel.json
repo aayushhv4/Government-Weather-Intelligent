@@ -22,6 +22,11 @@
     },
 
     {
+      "source": "/platform/public-site/government-version/:path*",
+      "destination": "/frontend/public-site/government-version/:path*"
+    },
+
+    {
       "source": "/platform",
       "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
     },
@@ -104,6 +109,15 @@
     {
       "source": "/whatsapp-beta/js/whatsapp-demo.js",
       "destination": "/frontend/whatsapp-beta/js/whatsapp-demo.js"
+    },
+
+    {
+      "source": "/public-site/government-version/:path*",
+      "destination": "/frontend/public-site/government-version/:path*"
+    },
+    {
+      "source": "/public-site/LAST_GOV_API_GRAPHS_FINAL.html",
+      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
     },
 
     {
