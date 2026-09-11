@@ -4729,7 +4729,7 @@ setTimeout(updateLiveTickerClock, 500);
 
     <div class="auth-login-panel">
       <div class="auth-panel-top">
-        <div><h2 data-i18n="auth_welcome_title">Welcome to KrishiSetu</h2><p class="muted" data-i18n="auth_welcome_sub">Sign in or create your verified agricultural account.</p></div>
+        <div><h2 id="authPanelHeading" data-i18n="auth_welcome_title">Sign in to your Krishi Setu account</h2><p id="authPanelSub" class="muted" data-i18n="auth_welcome_sub">Welcome back — enter your details below.</p></div>
         <div class="auth-language">🌐 <select id="loginLanguageSelect" class="lang-select" onchange="changeLanguage(this.value)"><option value="en">English</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="or">ଓଡ଼ିଆ</option></select></div>
       </div>
 
@@ -4760,10 +4760,11 @@ setTimeout(updateLiveTickerClock, 500);
           <button id="authSignInTab" class="auth-tab active" onclick="setAuthMode('signin')" data-i18n="auth_signin">Sign In</button>
           <button id="authCreateTab" class="auth-tab" onclick="setAuthMode('create')" data-i18n="auth_create">Create New Account</button>
         </div>
-        <div class="auth-role-note">🔐 <span><b>Choose your account role during registration.</b> Once created, the role is locked for data integrity.</span></div>
+        <div class="auth-role-note">🌱 <span><b>Choose how you'll use Krishi Setu</b> <span class="muted" style="font-weight:400">· Select your account type to get the right tools.</span></span></div>
 
         <div id="newAccountRoleBox" style="display:none">
           <p class="muted" style="font-size:12px" data-i18n="auth_role_help">Select whether you are selling harvest produce or sourcing produce as a buyer:</p>
+          <p class="muted" style="font-size:11px;margin-top:4px" id="authRoleLockNote">You can't change your account type after registration.</p>
           <div class="role-choice-grid">
             <button type="button" id="loginRoleFarmer" class="role-choice farmer" onclick="selectLoginRole('farmer')">
               <div style="font-size:32px">👨‍🌾</div>
@@ -5877,13 +5878,13 @@ const I18N = {
     btn_translate: "Translate", tagline: "Farm. Connect. Prosper.", active_role: "Active Profile",
     ticker_live_label: "LIVE ACTIVITY", nav_login: "Login / Account", auth_title: "Login / Account",
     auth_signin: "Sign In", auth_create: "Create New Account",
-    auth_role_help: "Select your role during account creation. Role is locked after login for safety.",
+    auth_role_help: "Select whether you are selling harvest produce or sourcing produce as a buyer:",
     auth_seller: "Seller / Farmer", auth_seller_desc: "List crops, receive buyer bids, manage stock and logistics.",
     auth_buyer: "Buyer", auth_buyer_desc: "Browse lots, place offers, track orders and rate sellers.",
     auth_name: "Full Name / Contact Person", auth_mobile: "Mobile Number (10 Digits)", auth_email: "Email Address", auth_password: "Password (6+ characters)",
     auth_signin_btn: "Sign In", auth_create_btn: "Create Account", auth_logout: "Log Out",
     auth_demo_note: "Authentication is handled securely by Supabase. Passwords are never stored in browser storage.",
-    auth_welcome_title: "Welcome to KrishiSetu", auth_welcome_sub: "Sign in or create your verified agricultural account.",
+    auth_welcome_title: "Sign in to your Krishi Setu account", auth_welcome_sub: "Welcome back — enter your details below.",
     nav_dashboard: "Dashboard", nav_schemes: "Government Schemes", nav_market: "Mandi Prices",
     nav_cropDoctor: "Snap & Diagnose", nav_riskShield: "Risk Simulator", nav_inventory: "Crop Inventory",
     nav_shelf_predictor: "Shelf-Life Predictor", nav_sell: "Publish Produce Lot", nav_buyerOffers: "Buyer Offers",
@@ -7314,6 +7315,8 @@ function setAuthMode(mode){
   const backWrap = document.getElementById('authBackToSignInWrap');
   const primaryBtn = document.getElementById('authPrimaryBtn');
 
+  const panelHeading = document.getElementById('authPanelHeading');
+  const panelSub = document.getElementById('authPanelSub');
   if(mode === 'signin'){
     if(authTabs) authTabs.style.display = 'flex';
     if(signTab) signTab.classList.add('active');
@@ -7328,6 +7331,8 @@ function setAuthMode(mode){
     if(forgotLink) forgotLink.style.display = 'inline-block';
     if(backWrap) backWrap.style.display = 'none';
     if(savedBar) savedBar.style.display = localStorage.getItem('krishiSetuSavedIdentity') ? 'flex' : 'none';
+    if(panelHeading) panelHeading.textContent = 'Sign in to your Krishi Setu account';
+    if(panelSub) panelSub.textContent = 'Welcome back — enter your details below.';
     if(primaryBtn){
       primaryBtn.style.display = 'block';
       primaryBtn.innerHTML = '🚀 <span data-i18n="auth_signin_btn">Sign In</span>';
@@ -7347,6 +7352,8 @@ function setAuthMode(mode){
     if(forgotLink) forgotLink.style.display = 'none';
     if(backWrap) backWrap.style.display = 'none';
     if(savedBar) savedBar.style.display = 'none';
+    if(panelHeading) panelHeading.textContent = 'Create your Krishi Setu account';
+    if(panelSub) panelSub.textContent = 'Select your account type to get the right tools.';
     loginRole = null;
     document.getElementById('loginRoleFarmer')?.classList.remove('selected');
     document.getElementById('loginRoleBuyer')?.classList.remove('selected');

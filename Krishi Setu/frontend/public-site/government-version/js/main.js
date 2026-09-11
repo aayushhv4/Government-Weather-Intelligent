@@ -11,6 +11,39 @@
 (function () {
   'use strict';
 
+  /* ============================================================
+     THEME: Light/Dark toggle
+     - Default: always 'light' for first-time visitors.
+     - Saved preference in localStorage key 'ks_gov_theme'.
+     - No prefers-color-scheme override — product default is light.
+     ============================================================ */
+  (function initTheme() {
+    var saved = localStorage.getItem('ks_gov_theme');
+    var theme = (saved === 'dark') ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    /* Update toggle button icon once DOM is ready */
+    document.addEventListener('DOMContentLoaded', function () {
+      syncThemeBtn(theme);
+    });
+    /* Also sync immediately if already loaded (scripts at end of body) */
+    syncThemeBtn(theme);
+  })();
+
+  function syncThemeBtn(theme) {
+    var btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+    if (theme === 'dark') {
+      btn.textContent = '☀️ Light';
+      btn.setAttribute('aria-label', 'Switch to light mode');
+      btn.setAttribute('title', 'Switch to light mode');
+    } else {
+      btn.textContent = '🌙 Dark';
+      btn.setAttribute('aria-label', 'Switch to dark mode');
+      btn.setAttribute('title', 'Switch to dark mode');
+    }
+  }
+
+
   /* ---------- i18n string helper (English fallback until js/i18n.js loads) ---------- */
   function tr(key, fb) {
     if (window.KS_I18N && typeof KS_I18N.t === 'function') {
@@ -249,3 +282,27 @@
   };
   renderTicker();
 })();
+
+/* ============================================================
+   GLOBAL: toggleTheme — called from the button onclick.
+   Reads current theme, flips it, saves to localStorage, applies
+   to <html data-theme>, and syncs the button label.
+   ============================================================ */
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  var next = (current === 'dark') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('ks_gov_theme', next); } catch(e) {}
+  /* sync button label — works on all pages sharing this script */
+  var btn = document.getElementById('themeToggleBtn');
+  if (!btn) return;
+  if (next === 'dark') {
+    btn.textContent = '☀️ Light';
+    btn.setAttribute('aria-label', 'Switch to light mode');
+    btn.setAttribute('title', 'Switch to light mode');
+  } else {
+    btn.textContent = '🌙 Dark';
+    btn.setAttribute('aria-label', 'Switch to dark mode');
+    btn.setAttribute('title', 'Switch to dark mode');
+  }
+}
