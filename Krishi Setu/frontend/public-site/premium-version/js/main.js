@@ -16,8 +16,10 @@
   }
   var saved = null;
   try { saved = localStorage.getItem('ks_theme'); } catch (e) {}
-  var system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  applyTheme(saved || system);
+  // Same rule as the dashboard: only honor an explicit saved value. For a
+  // first-time visitor the product's intended default is LIGHT, not the OS
+  // preference.
+  applyTheme(saved || 'light');
   var themeBtn = document.getElementById('themeBtn');
   if (themeBtn) {
     themeBtn.addEventListener('click', function () {

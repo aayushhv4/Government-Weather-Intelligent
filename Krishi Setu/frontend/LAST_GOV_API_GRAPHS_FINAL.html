@@ -749,7 +749,7 @@ img{max-width:100%}
 .toast{
   position:fixed;right:24px;bottom:24px;background:#0f172a;color:#fff;
   padding:12px 18px;border-radius:14px;box-shadow:0 20px 40px rgba(0,0,0,0.25);
-  display:flex;align-items:center;gap:10px;z-index:2500;
+  display:flex;align-items:center;gap:10px;z-index:2147483647;
   transform:translateY(100px);opacity:0;transition:var(--transition);font-size:13px;font-weight:600;
 }
 .toast.show{transform:translateY(0);opacity:1}
@@ -4844,6 +4844,8 @@ setTimeout(updateLiveTickerClock, 500);
             <button class="btn outline btn-sm" type="button" onclick="autofillLoginIdentity(true)">Use saved details</button>
           </div>
 
+          <div id="authInlineError" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;font-size:13.5px;line-height:1.4;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-weight:500" role="alert" aria-live="assertive"></div>
+
           <button id="authPrimaryBtn" class="btn primary" style="width:100%;margin-top:18px;min-height:48px" onclick="performAuth()">🚀 <span data-i18n="auth_signin_btn">Sign In</span></button>
 
           <div class="auth-security-row"><span>🔒 Supabase Cloud Auth</span><span>🛡️ Role Enforced</span><span>☁️ Automatic Sync</span></div>
@@ -7021,7 +7023,13 @@ function renderLoggedInIdentity(){
 
 function showAuthError(msg){
   const box = document.getElementById('authInlineError');
-  if(box){ box.style.display = 'block'; box.innerHTML = '❌ ' + msg; }
+  if(box){
+    box.style.display = 'block';
+    box.style.background = '#fef2f2';
+    box.style.borderColor = '#fecaca';
+    box.style.color = '#991b1b';
+    box.innerHTML = '❌ ' + msg;
+  }
   toast(msg, '❌');
 }
 function clearAuthError(){
@@ -7038,14 +7046,35 @@ function supabaseReady(){
   return true;
 }
 
-function formatSupabaseError(error, fallback='Authentication failed.'){
+function formatSupabaseError(error, fallback='Authentication failed. Please try again.'){
   if(!error) return fallback;
-  const msg = String(error.message || fallback);
-  if(/invalid login credentials/i.test(msg)) return 'Incorrect email or password. Please check and try again.';
-  if(/email not confirmed/i.test(msg)) return 'Please confirm your email from the link sent by Supabase, then sign in.';
-  if(/already registered|already exists|duplicate key/i.test(msg)) return 'An account with this email already exists. Please Sign In.';
-  if(/invalid api key|invalid key|apikey/i.test(msg)) return 'Invalid Supabase API key.';
-  return msg;
+  const msg = String(error.message || '');
+  const code = String(error.code || '').toLowerCase();
+  // Safe, user-friendly mapping — never expose raw Supabase internals or the
+  // true email-existence check. All unknown auth failures collapse to a generic
+  // message rather than leaking whether an account exists.
+  if(/invalid login credentials/i.test(msg) ||
+     code === 'invalid_credentials' ||
+     /invalid email or password/i.test(msg)){ return 'Incorrect email or password. Please check and try again.'; }
+  if(/email not confirmed/i.test(msg) ||
+     code === 'email_not_confirmed' ||
+     /confirmation link/i.test(msg)){ return 'Please confirm your email from the link sent by Supabase, then sign in.'; }
+  if(/already registered|already exists|duplicate key/i.test(msg) ||
+     code === 'user_already_exists'){ return 'An account with this email already exists. Please Sign In.'; }
+  if(/invalid api key|invalid key|apikey/i.test(msg) ||
+     code === 'invalid_api_key'){ return 'Invalid Supabase API key.'; }
+  if(/network|timeout|fetch/i.test(msg) ||
+     /failed to fetch/i.test(msg)){ return 'Could not reach the sign-in service. Check your internet connection and try again.'; }
+  // Keep the original message ONLY when it looks like a normal, safe user-facing
+  // string. Otherwise collapse to a generic message (log the raw error in
+  // console for debugging, never to the user).
+  if(/^[a-z][a-z0-9 ]{4,90}$/i.test(msg) &&
+     !msg.includes('key') && !msg.includes('token') && !msg.includes('secret') &&
+     !msg.includes('jwt') && !msg.includes('portal') &&
+     !msg.includes('http') && !msg.includes('api.')){
+    return msg;
+  }
+  return fallback;
 }
 
 async function loadSupabaseProfile(userId){
@@ -7305,10 +7334,13 @@ async function performAuth(){
 
   const mode = window.authMode || 'signin';
   const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
-  const password = document.getElementById('loginPassword')?.value || '';
+  const password = (document.getElementById('loginPassword')?.value || '').trim();
 
-  if(!email || !/^\S+@\S+\.\S+$/.test(email)){ showAuthError('Please enter a valid email address.'); return; }
-  if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
+  // Distinguish the three most common front-end mistakes so the user gets a
+  // clear, non-technical message on the first attempt.
+  if(!email){ showAuthError('Please enter your email address.'); return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ showAuthError('Please enter a valid email address.'); return; }
+  if(!password){ showAuthError('Please enter your password.'); return; }
 
   const btn = document.getElementById('authPrimaryBtn');
   const oldBtnHtml = btn?.innerHTML;
@@ -16259,11 +16291,14 @@ setTimeout(updateLiveTickerClock, 500);
    ========================================================================= */
 function getSavedTheme(){
   try { return localStorage.getItem('ks_theme') || null; } catch(e){ return null; }
-}
-function resolveInitialTheme(){
+}function resolveInitialTheme(){
   const saved = getSavedTheme();
-  if (saved === 'dark' || saved === 'light') return saved;
-  try { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; } catch(e){ return 'light'; }
+  // Only use an explicit saved value. For a first-time visitor — no saved
+  // preference at all — the product's intended default is LIGHT, not the OS
+  // preference. This keeps a new user out of dark mode without removing the
+  // toggle / saved-preference behavior for existing users.
+  if(saved === 'dark' || saved === 'light') return saved;
+  return 'light';
 }
 function applyTheme(theme, persist){
   const dark = theme === 'dark';

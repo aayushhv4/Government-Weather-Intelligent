@@ -19,7 +19,7 @@
     var saved = null;
     try { saved = localStorage.getItem('ks_theme'); } catch (e) {}
     if (saved === 'dark' || saved === 'light') return saved;
-    try { return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (e) { return 'light'; }
+    return 'light';
   }
   function applyTheme(t) {
     document.documentElement.classList.toggle('dark', t === 'dark');
