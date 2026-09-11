@@ -234,7 +234,7 @@
       'This prototype is available for <b>Farmer</b> and <b>Buyer</b> profiles only.<br>' +
       'Supervisor oversight stays in the main Krishi Setu dashboard.',
       '<div class="wa-actions">' + actionBtn('Open Krishi Setu Dashboard', 'open-dash', 'yes', 'solid') + '</div>' +
-      note('Prototype interface for SIH demonstration.')
+      note('Beta demonstration interface · Actions shown here are simulated.')
     );
   }
 

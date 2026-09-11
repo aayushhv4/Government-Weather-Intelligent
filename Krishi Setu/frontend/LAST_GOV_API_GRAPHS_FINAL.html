@@ -1523,7 +1523,6 @@ body.buyer-mode .nav button.active::before{background:linear-gradient(180deg,#93
   border-radius:12px;border:1px solid var(--ks-line);background:var(--ks-surface);
   box-shadow:var(--ks-shadow-sm);
 }
-.role-persona-switcher{}
 .role-persona-btn{
   transition:var(--transition);
 }
@@ -1620,7 +1619,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ks-green);box-shadow:
 body.dark-mode input,body.dark-mode select,body.dark-mode textarea{background:#0f1f16;border-color:#27402f}
 
 /* ===================== MODALS / DRAWERS / TOAST ===================== */
-.modal-backdrop,.modal-open{}
 .modal-box,.modal-card{border-radius:24px;box-shadow:var(--ks-shadow-lg);border:1px solid var(--ks-line)}
 .modal{background:rgba(7,17,11,.58);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .toast{border-radius:14px;background:var(--ks-ink);border:1px solid var(--ks-line-strong)}
@@ -4746,7 +4744,7 @@ setTimeout(updateLiveTickerClock, 500);
         <div id="supabaseProfileStatus" class="muted" style="margin-top:10px;padding:10px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;font-size:12px">☁️ Profile storage: synced with Supabase.</div>
       </div>
 
-      <div id="accountLogoutPanel" style="display:none;margin:14px 0;padding:16px;border:1px solid #fecaca;background:#fff1f2;border-radius:14px;justify-content:space-between;align-items:center;flex-wrap:gap:10px">
+      <div id="accountLogoutPanel" style="display:none;margin:14px 0;padding:16px;border:1px solid #fecaca;background:#fff1f2;border-radius:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div><b>Account Session</b><div class="muted" style="font-size:12px">Sign out of this device securely.</div></div>
         <div style="display:flex;gap:8px">
           <button class="btn outline btn-sm" onclick="retrySaveCurrentProfile()">☁️ Retry Profile Save</button>
@@ -4832,13 +4830,49 @@ setTimeout(updateLiveTickerClock, 500);
         </div>
 
         <div id="authEntryForm">
-          <div class="form-grid" id="createBasicFields">
+          <div class="form-grid" id="createBasicFields" style="display:none">
             <div><label data-i18n="auth_name">Full Name / Contact Person</label><input id="loginName" autocomplete="name" placeholder="e.g. Ramesh Patil"></div>
             <div><label data-i18n="auth_mobile">Mobile Number (10 Digits)</label><input id="loginMobile" autocomplete="tel" inputmode="numeric" maxlength="10" placeholder="e.g. 9822045678"></div>
           </div>
-          <label data-i18n="auth_email">Email Address</label><input id="loginEmail" type="email" autocomplete="email" placeholder="e.g. user@example.com">
-          <label data-i18n="auth_password">Password (6+ characters)</label><input id="loginPassword" type="password" placeholder="Enter secure password">
           
+          <div id="authEmailGroup">
+            <label data-i18n="auth_email">Email Address</label>
+            <input id="loginEmail" type="email" autocomplete="email" placeholder="e.g. user@example.com">
+          </div>
+
+          <div id="authPasswordGroup">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+              <label data-i18n="auth_password" style="margin:0">Password (6+ characters)</label>
+              <button type="button" id="forgotPasswordLink" onclick="setAuthMode('forgot')" style="background:none;border:none;padding:0;font-size:12px;color:var(--green,#15803d);font-weight:600;cursor:pointer;text-decoration:underline">Forgot password?</button>
+            </div>
+            <div class="password-field-wrap" style="position:relative;display:flex;align-items:center;margin-top:4px">
+              <input id="loginPassword" type="password" placeholder="Enter secure password" style="padding-right:44px;width:100%">
+              <button type="button" id="togglePasswordBtn" class="password-eye-btn" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password" title="Show password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:6px;font-size:16px;color:#64748b;display:flex;align-items:center;justify-content:center">
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <div id="authConfirmPasswordGroup" style="display:none;margin-top:10px">
+            <label data-i18n="auth_confirm_password">Confirm Password</label>
+            <input id="loginConfirmPassword" type="password" placeholder="Re-enter your password">
+          </div>
+
+          <div id="authUpdatePasswordGroup" style="display:none;margin-top:10px">
+            <h3 style="margin:0 0 4px;font-size:16px">Reset Your Password</h3>
+            <p class="muted" style="margin:0 0 12px;font-size:12px">Enter a new secure password for your account.</p>
+            <label>New Password (6+ characters)</label>
+            <div class="password-field-wrap" style="position:relative;display:flex;align-items:center;margin-top:4px">
+              <input id="newPasswordInput" type="password" placeholder="Enter new password" style="padding-right:44px;width:100%">
+              <button type="button" id="toggleNewPasswordBtn" class="password-eye-btn" onclick="togglePasswordVisibility('newPasswordInput', this)" aria-label="Show password" title="Show password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:6px;font-size:16px;color:#64748b;display:flex;align-items:center;justify-content:center">
+                👁️
+              </button>
+            </div>
+            <label style="margin-top:10px">Confirm New Password</label>
+            <input id="confirmNewPasswordInput" type="password" placeholder="Re-enter new password">
+            <button id="updatePasswordBtn" class="btn primary" type="button" style="width:100%;margin-top:16px;min-height:46px" onclick="handleUpdatePassword()">🔒 Update Password</button>
+          </div>
+
           <div class="saved-login" id="savedLoginBar" style="display:none;margin-top:10px">
             <span>⚡ <b>Saved sign-in details found</b><small class="muted" style="display:block">Email, name & mobile only. Passwords are never cached.</small></span>
             <button class="btn outline btn-sm" type="button" onclick="autofillLoginIdentity(true)">Use saved details</button>
@@ -4847,6 +4881,10 @@ setTimeout(updateLiveTickerClock, 500);
           <div id="authInlineError" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;font-size:13.5px;line-height:1.4;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-weight:500" role="alert" aria-live="assertive"></div>
 
           <button id="authPrimaryBtn" class="btn primary" style="width:100%;margin-top:18px;min-height:48px" onclick="performAuth()">🚀 <span data-i18n="auth_signin_btn">Sign In</span></button>
+
+          <div id="authBackToSignInWrap" style="display:none;text-align:center;margin-top:14px">
+            <button type="button" class="btn outline btn-sm" onclick="setAuthMode('signin')" style="display:inline-flex;align-items:center;gap:6px">← Back to Sign In</button>
+          </div>
 
           <div class="auth-security-row"><span>🔒 Supabase Cloud Auth</span><span>🛡️ Role Enforced</span><span>☁️ Automatic Sync</span></div>
           <div class="login-note" data-i18n="auth_demo_note">Authentication is handled securely by Supabase. Passwords are never stored in browser storage.</div>
@@ -7146,33 +7184,213 @@ async function syncCloudState(){
   }catch(e){}
 }
 
+function togglePasswordVisibility(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  const label = isPass ? 'Hide password' : 'Show password';
+  if(btn){
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.innerHTML = isPass ? '🙈' : '👁️';
+  }
+}
+
+function showAuthSuccess(msg){
+  const box = document.getElementById('authInlineError');
+  if(box){
+    box.style.display = 'block';
+    box.style.background = '#ecfdf5';
+    box.style.borderColor = '#bbf7d0';
+    box.style.color = '#166534';
+    box.innerHTML = '✅ ' + msg;
+  }
+  toast(msg, '📩');
+}
+
+async function sendPasswordReset(){
+  clearAuthError();
+  const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
+  if(!email){ showAuthError('Please enter your email address.'); return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ showAuthError('Please enter a valid email address.'); return; }
+
+  const btn = document.getElementById('authPrimaryBtn');
+  const oldBtn = btn?.innerHTML;
+  if(btn){ btn.disabled = true; btn.innerHTML = '⏳ Sending reset link…'; }
+
+  try{
+    if(DEMO_MODE || !supabaseClient){
+      await new Promise(r => setTimeout(r, 600));
+      showAuthSuccess('Password reset email sent. Please check your inbox.');
+      return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: getAuthRedirectUrl()
+    });
+    if(error){
+      showAuthError(formatSupabaseError(error, 'Could not send password reset email. Please try again.'));
+      return;
+    }
+    showAuthSuccess('Password reset email sent. Please check your inbox.');
+  }catch(e){
+    showAuthError('Could not send password reset email. Please try again.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = oldBtn || '📩 Send Reset Link'; }
+  }
+}
+
+async function handleUpdatePassword(){
+  clearAuthError();
+  const newPassword = (document.getElementById('newPasswordInput')?.value || '').trim();
+  const confirmNewPassword = (document.getElementById('confirmNewPasswordInput')?.value || '').trim();
+
+  if(!newPassword){ showAuthError('Please enter your new password.'); return; }
+  if(newPassword.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
+  if(!confirmNewPassword){ showAuthError('Please confirm your new password.'); return; }
+  if(newPassword !== confirmNewPassword){ showAuthError('Passwords do not match.'); return; }
+
+  const btn = document.getElementById('updatePasswordBtn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '⏳ Updating password…'; }
+
+  try{
+    if(DEMO_MODE || !supabaseClient){
+      await new Promise(r => setTimeout(r, 500));
+      showAuthSuccess('Password updated successfully.');
+      setTimeout(() => { setAuthMode('signin'); }, 1500);
+      return;
+    }
+    const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if(error){
+      showAuthError(formatSupabaseError(error, 'Failed to update password. Please try again.'));
+      return;
+    }
+    showAuthSuccess('Password updated successfully.');
+    setTimeout(() => { setAuthMode('signin'); }, 1500);
+  }catch(e){
+    showAuthError('Failed to update password. Please try again.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '🔒 Update Password'; }
+  }
+}
+
+function initPasswordRecoveryHandler(){
+  try{
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const search = new URLSearchParams(window.location.search);
+    if(hash.get('type') === 'recovery' || search.get('type') === 'recovery'){
+      window.authMode = 'update_password';
+      setAuthMode('update_password');
+    }
+    if(supabaseClient?.auth?.onAuthStateChange){
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if(event === 'PASSWORD_RECOVERY'){
+          window.authMode = 'update_password';
+          setAuthMode('update_password');
+        }
+      });
+    }
+  }catch(e){}
+}
+window.addEventListener('hashchange', initPasswordRecoveryHandler);
+
 function setAuthMode(mode){
   if(isLoggedIn) return;
   window.authMode = mode;
-  const sign = document.getElementById('authSignInTab'), create = document.getElementById('authCreateTab');
-  if(sign) sign.classList.toggle('active', mode==='signin');
-  if(create) create.classList.toggle('active', mode==='create');
-  
+  clearAuthError();
+
+  const signTab = document.getElementById('authSignInTab');
+  const createTab = document.getElementById('authCreateTab');
+  const authTabs = document.getElementById('authTabs');
+  const roleNote = document.querySelector('.auth-role-note');
   const roleBox = document.getElementById('newAccountRoleBox');
-  if(roleBox) roleBox.style.display = mode==='create' ? 'block' : 'none';
-  
   const basicFields = document.getElementById('createBasicFields');
-  if(basicFields) basicFields.style.display = mode==='create' ? 'grid' : 'none';
-  
-  const saved = document.getElementById('savedLoginBar');
-  if(saved) saved.style.display = (mode==='signin' && localStorage.getItem('krishiSetuSavedIdentity')) ? 'flex' : 'none';
-  
-  if(mode==='create'){
+  const savedBar = document.getElementById('savedLoginBar');
+  const emailGroup = document.getElementById('authEmailGroup');
+  const passwordGroup = document.getElementById('authPasswordGroup');
+  const confirmGroup = document.getElementById('authConfirmPasswordGroup');
+  const updateGroup = document.getElementById('authUpdatePasswordGroup');
+  const forgotLink = document.getElementById('forgotPasswordLink');
+  const backWrap = document.getElementById('authBackToSignInWrap');
+  const primaryBtn = document.getElementById('authPrimaryBtn');
+
+  if(mode === 'signin'){
+    if(authTabs) authTabs.style.display = 'flex';
+    if(signTab) signTab.classList.add('active');
+    if(createTab) createTab.classList.remove('active');
+    if(roleNote) roleNote.style.display = 'none';
+    if(roleBox) roleBox.style.display = 'none';
+    if(basicFields) basicFields.style.display = 'none';
+    if(emailGroup) emailGroup.style.display = 'block';
+    if(passwordGroup) passwordGroup.style.display = 'block';
+    if(confirmGroup) confirmGroup.style.display = 'none';
+    if(updateGroup) updateGroup.style.display = 'none';
+    if(forgotLink) forgotLink.style.display = 'inline-block';
+    if(backWrap) backWrap.style.display = 'none';
+    if(savedBar) savedBar.style.display = localStorage.getItem('krishiSetuSavedIdentity') ? 'flex' : 'none';
+    if(primaryBtn){
+      primaryBtn.style.display = 'block';
+      primaryBtn.innerHTML = '🚀 <span data-i18n="auth_signin_btn">Sign In</span>';
+      primaryBtn.setAttribute('onclick', 'performAuth()');
+    }
+  } else if(mode === 'create'){
+    if(authTabs) authTabs.style.display = 'flex';
+    if(signTab) signTab.classList.remove('active');
+    if(createTab) createTab.classList.add('active');
+    if(roleNote) roleNote.style.display = 'flex';
+    if(roleBox) roleBox.style.display = 'block';
+    if(basicFields) basicFields.style.display = 'grid';
+    if(emailGroup) emailGroup.style.display = 'block';
+    if(passwordGroup) passwordGroup.style.display = 'block';
+    if(confirmGroup) confirmGroup.style.display = 'block';
+    if(updateGroup) updateGroup.style.display = 'none';
+    if(forgotLink) forgotLink.style.display = 'none';
+    if(backWrap) backWrap.style.display = 'none';
+    if(savedBar) savedBar.style.display = 'none';
     loginRole = null;
     document.getElementById('loginRoleFarmer')?.classList.remove('selected');
     document.getElementById('loginRoleBuyer')?.classList.remove('selected');
     const cp = document.getElementById('createProfileFields');
     if(cp) cp.style.display = 'none';
+    if(primaryBtn){
+      primaryBtn.style.display = 'block';
+      primaryBtn.innerHTML = '📝 <span data-i18n="auth_create_btn">Create Account</span>';
+      primaryBtn.setAttribute('onclick', 'performAuth()');
+    }
+  } else if(mode === 'forgot'){
+    if(authTabs) authTabs.style.display = 'none';
+    if(roleNote) roleNote.style.display = 'none';
+    if(roleBox) roleBox.style.display = 'none';
+    if(basicFields) basicFields.style.display = 'none';
+    if(emailGroup) emailGroup.style.display = 'block';
+    if(passwordGroup) passwordGroup.style.display = 'none';
+    if(confirmGroup) confirmGroup.style.display = 'none';
+    if(updateGroup) updateGroup.style.display = 'none';
+    if(forgotLink) forgotLink.style.display = 'none';
+    if(backWrap) backWrap.style.display = 'block';
+    if(savedBar) savedBar.style.display = 'none';
+    if(primaryBtn){
+      primaryBtn.style.display = 'block';
+      primaryBtn.innerHTML = '📩 Send Reset Link';
+      primaryBtn.setAttribute('onclick', 'sendPasswordReset()');
+    }
+  } else if(mode === 'update_password'){
+    if(authTabs) authTabs.style.display = 'none';
+    if(roleNote) roleNote.style.display = 'none';
+    if(roleBox) roleBox.style.display = 'none';
+    if(basicFields) basicFields.style.display = 'none';
+    if(emailGroup) emailGroup.style.display = 'none';
+    if(passwordGroup) passwordGroup.style.display = 'none';
+    if(confirmGroup) confirmGroup.style.display = 'none';
+    if(updateGroup) updateGroup.style.display = 'block';
+    if(forgotLink) forgotLink.style.display = 'none';
+    if(backWrap) backWrap.style.display = 'block';
+    if(savedBar) savedBar.style.display = 'none';
+    if(primaryBtn){
+      primaryBtn.style.display = 'none';
+    }
   }
-  
-  const btn = document.getElementById('authPrimaryBtn');
-  if(btn) btn.innerHTML = mode==='create' ? '📝 <span data-i18n="auth_create_btn">Create Account</span>' : '🚀 <span data-i18n="auth_signin_btn">Sign In</span>';
-  updateTranslations();
+  try { if(typeof updateTranslations === 'function') updateTranslations(); } catch(e){}
 }
 
 function selectLoginRole(role){
@@ -7246,7 +7464,7 @@ function showLoginPage(){
     if(accountView) accountView.style.display = 'none';
     if(accountPanel) accountPanel.style.display = 'none';
     if(entry) entry.style.display = 'block';
-    setAuthMode('signin');
+    setAuthMode(window.authMode || 'signin');
   }
   updateAuthChrome();
   try { if(typeof updateTranslations === 'function') updateTranslations(); } catch(e) {}
@@ -7336,11 +7554,17 @@ async function performAuth(){
   const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
   const password = (document.getElementById('loginPassword')?.value || '').trim();
 
-  // Distinguish the three most common front-end mistakes so the user gets a
-  // clear, non-technical message on the first attempt.
+  // Distinguish front-end mistakes so user gets a clear message:
   if(!email){ showAuthError('Please enter your email address.'); return; }
   if(!/^\S+@\S+\.\S+$/.test(email)){ showAuthError('Please enter a valid email address.'); return; }
   if(!password){ showAuthError('Please enter your password.'); return; }
+  if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
+
+  if(mode === 'create'){
+    const confirmPassword = (document.getElementById('loginConfirmPassword')?.value || '').trim();
+    if(!confirmPassword){ showAuthError('Please confirm your password.'); return; }
+    if(password !== confirmPassword){ showAuthError('Passwords do not match.'); return; }
+  }
 
   const btn = document.getElementById('authPrimaryBtn');
   const oldBtnHtml = btn?.innerHTML;
@@ -7669,6 +7893,27 @@ function finishBootNoSession(){
 async function bootstrapSupabaseSession(){
   document.body.classList.add('auth-first');
   document.documentElement.classList.add('krishi-auth-boot');
+  initPasswordRecoveryHandler();
+
+  const savedLoginFlag = localStorage.getItem('krishiSetuDemoLoggedIn');
+  const savedId = localStorage.getItem('krishiSetuSavedIdentity');
+  const savedRole = localStorage.getItem('krishiSetuRole');
+  if(savedLoginFlag && savedId){
+    try{
+      const identity = JSON.parse(savedId);
+      if(identity?.email){
+        const mockUser = {
+          id: 'demo_' + identity.email.replace(/[^a-z0-9]/gi,'_'),
+          email: identity.email,
+          user_metadata: { full_name: identity.name, role: savedRole || 'farmer', mobile: identity.mobile }
+        };
+        await loginAccount(mockUser, false);
+        document.documentElement.classList.remove('krishi-auth-boot');
+        document.documentElement.classList.remove('krishi-boot');
+        return;
+      }
+    }catch(e){}
+  }
 
   if(DEMO_MODE){
     const banner = document.getElementById('demoModeBanner');
