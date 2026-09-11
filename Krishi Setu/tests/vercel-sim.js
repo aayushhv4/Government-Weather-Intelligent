@@ -1,17 +1,37 @@
-// Krishi Setu — Vercel rewrite simulator
+// Krishi Setu — Vercel routing simulator
 //
-// Emulates Vercel static-deployment semantics for `vercel.json` `rewrites`:
+// Emulates Vercel's static-deployment routing for `vercel.json` as faithfully as
+// it can, using semantics taken from Vercel's OWN compiler
+// (@vercel/routing-utils -> getTransformedRoutes), so this harness can never
+// again pass on behaviour that production does not have:
+//
+//   - order is: redirects -> filesystem -> rewrites -> 404
+//     (Vercel emits an explicit `{ "handle": "filesystem" }` phase BEFORE the
+//      vercel.json rewrites, so an existing static file wins over a rewrite)
 //   - rules are matched IN ORDER, first match wins
-//   - `:path*` matches zero or more segments (including a bare trailing slash)
-//   - query strings are preserved on rewrites (no redirect happens)
-//   - unmatched paths fall back to real static files, then 404
+//   - a literal source is matched EXACTLY, so a trailing slash is significant:
+//     `/platform` does NOT match `/platform/`
+//   - `/:name*` compiles to `(?:/([^/]+(?:/[^/]+)*))?`: it matches `/prefix`
+//     and `/prefix/a/b`, but NOT `/prefix/` (zero-segment trailing slash)
+//   - `redirects` are permanent (308) unless `"permanent": false` is set
+//   - query strings are preserved on rewrites; `has`/`missing` query conditions
+//     are honoured
+//   - unmatched paths fall through to real static files, then 404
+//
+// HISTORY / WHY THIS FILE CHANGED: an earlier version of this simulator let
+// `:path*` match a bare trailing slash (`/platform/`). Vercel does not. That
+// false pass hid the real production bug: `/platform/` and
+// `/platform/?intent=login` matched NO route at all and returned Vercel's
+// `404: NOT_FOUND`, because the only rule matching that path was the
+// `?intent=login`-guarded redirect, which is skipped when the query is present.
 //
 // Usage (standalone):
 //   node tests/vercel-sim.js [port]          (default 8141)
 //
 // Programmatic:
 //   const sim = require('./tests/vercel-sim.js');
-//   const server = sim.start(projectRoot, portOr0);   // returns http.Server
+//   const server = await sim.start(projectRoot, portOr0);
+//   const r = sim.createResolver(projectRoot);   // r(pathname, search) -> decision
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -48,8 +68,11 @@ function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Compile one Vercel rewrite source pattern into a RegExp + param list.
-// Supported: literal segments, `:name*` (zero or more segments), `:name` (one segment), `*`.
+// Compile one Vercel source pattern, mirroring Vercel's compiled `src` regexes.
+// Verified against @vercel/routing-utils getTransformedRoutes() output:
+//   "/platform"        -> ^/platform$
+//   "/platform/"       -> ^/platform/$
+//   "/platform/:path*" -> ^/platform(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?$
 function compileSource(source) {
   if (source.indexOf(':') === -1 && source.indexOf('*') === -1) {
     return { re: new RegExp('^' + escapeRe(source) + '$'), params: [] };
@@ -59,21 +82,25 @@ function compileSource(source) {
   const params = [];
   while (i < source.length) {
     const ch = source[i];
-    if (ch === '*') {
-      params.push({ name: '$wild' + params.length, star: false });
-      body += '(.*)';
-      i++;
-    } else if (ch === ':') {
+    if (ch === ':') {
       const m = /^:([A-Za-z_][A-Za-z0-9_]*)(\*?)/.exec(source.slice(i));
       if (!m) { body += escapeRe(':'); i++; continue; }
       const star = m[2] === '*';
       params.push({ name: m[1], star });
-      // Vercel: `:path*` at the end of a segment also matches zero segments,
-      // i.e. `/platform/:path*` matches `/platform/` (empty capture).
-      const atSegmentEnd = i + m[0].length === source.length;
-      if (star) body += atSegmentEnd ? '([^/]*.*)?' : '(.*)';
-      else body += '([^/]+)';
+      if (star) {
+        // Vercel consumes the separator before the wildcard inside the
+        // optional group, so the group needs at least one non-empty segment.
+        if (body.endsWith('/')) body = body.slice(0, -1);
+        body += '(?:/([^/]+(?:/[^/]+)*))?';
+      } else {
+        body += '([^/]+)';
+      }
       i += m[0].length;
+    } else if (ch === '*') {
+      params.push({ name: '$wild' + params.length, star: true });
+      if (body.endsWith('/')) body = body.slice(0, -1);
+      body += '(?:/(.*))?';
+      i++;
     } else {
       body += escapeRe(ch);
       i++;
@@ -82,10 +109,21 @@ function compileSource(source) {
   return { re: new RegExp('^' + body + '$'), params };
 }
 
-function compileRules(rewrites) {
-  return rewrites.map(r => {
+function compileRules(list) {
+  return (list || []).map(r => {
     const c = compileSource(r.source);
-    return { source: r.source, destination: r.destination, re: c.re, params: c.params, has: r.has || [], missing: r.missing || [] };
+    return {
+      source: r.source,
+      destination: r.destination,
+      re: c.re,
+      params: c.params,
+      // Vercel sanitises this: a trailing slash on a redirect source would be
+      // stripped, which is exactly the class of route this project needs, so we
+      // keep it verbatim.
+      permanent: r.permanent !== false, // Vercel default: permanent (308)
+      has: r.has || [],
+      missing: r.missing || [],
+    };
   });
 }
 
@@ -108,20 +146,16 @@ function loadConfig(projectRoot) {
     redirects: (raw.redirects || []).map(r => ({
       source: r.source,
       destination: r.destination,
-      permanent: !!r.permanent,
+      permanent: r.permanent,
       has: r.has || [],
       missing: r.missing || [],
     })),
   };
 }
 
-function start(projectRoot, port = 0) {
-  const cfg = loadConfig(projectRoot);
-  const redirectRules = compileRules(cfg.redirects);
-  const rules = compileRules(cfg.rewrites);
-
-  // Vercel static-file lookup: a directory resolves to its index.html
-  function resolveFile(p) {
+function makeFileResolver(projectRoot) {
+  // Vercel static-file lookup: exact file, or a directory's index.html
+  return function resolveFile(p) {
     if (!p.startsWith(projectRoot)) return null;
     if (fs.existsSync(p) && fs.statSync(p).isFile()) return p;
     if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
@@ -129,85 +163,118 @@ function start(projectRoot, port = 0) {
       if (fs.existsSync(idx) && fs.statSync(idx).isFile()) return idx;
     }
     return null;
+  };
+}
+
+function conditionsOk(conds, wantPresent, params) {
+  for (const c of (conds || [])) {
+    if (c.type !== 'query') continue;
+    const present = params.has(c.key) && (c.value === undefined || params.get(c.key) === c.value);
+    if (present !== wantPresent) return false;
   }
+  return true;
+}
+
+// Resolve a request the way Vercel would.
+//   resolve(pathname, search) ->
+//     { kind: 'redirect', status, location, source }
+//     { kind: 'file',     filePath, source, dest }
+//     { kind: '404',      source? }
+function createResolver(projectRoot) {
+  const cfg = loadConfig(projectRoot);
+  const redirectRules = compileRules(cfg.redirects);
+  const rewriteRules = compileRules(cfg.rewrites);
+  const resolveFile = makeFileResolver(projectRoot);
+
+  return function resolve(pathname, search) {
+    const query = search || '';
+    const params = new URLSearchParams(query);
+
+    // 1) redirects
+    for (const rule of redirectRules) {
+      const m = rule.re.exec(pathname);
+      if (!m) continue;
+      if (!conditionsOk(rule.missing, false, params)) continue;
+      if (!conditionsOk(rule.has, true, params)) continue;
+      const dest = applyDestination(rule.destination, m, rule.params);
+      // Vercel: a query string in the destination wins; otherwise the original
+      // query string is carried over.
+      const location = dest.indexOf('?') !== -1 ? dest : dest + query;
+      return { kind: 'redirect', status: rule.permanent ? 308 : 307, location, source: rule.source };
+    }
+
+    // 2) filesystem — Vercel's `{ handle: "filesystem" }` phase sits BEFORE the
+    //    vercel.json rewrites, so a real static file beats a rewrite.
+    const direct = resolveFile(path.normalize(path.join(projectRoot, pathname)));
+    if (direct) return { kind: 'file', filePath: direct, source: '(static)' };
+
+    // 3) rewrites — first match wins
+    for (const rule of rewriteRules) {
+      const m = rule.re.exec(pathname);
+      if (!m) continue;
+      const dest = applyDestination(rule.destination, m, rule.params);
+      // Vercel appends `?path=$1` to wildcard destinations; the query never
+      // affects static file lookup, so strip it before resolving.
+      const destPath = dest.split('?')[0];
+      const filePath = resolveFile(path.normalize(path.join(projectRoot, destPath)));
+      if (!filePath) return { kind: '404', source: rule.source, missingDest: destPath };
+      return { kind: 'rewrite', filePath, source: rule.source, dest: destPath };
+    }
+
+    return { kind: '404' };
+  };
+}
+
+function start(projectRoot, port = 0) {
+  const resolve = createResolver(projectRoot);
 
   const server = http.createServer((req, res) => {
     const rawUrl = req.url || '/';
     const qIdx = rawUrl.indexOf('?');
     const pathname = decodeURIComponent(qIdx === -1 ? rawUrl : rawUrl.slice(0, qIdx)) || '/';
-    const query = qIdx === -1 ? '' : rawUrl.slice(qIdx); // keep exact query string
+    const search = qIdx === -1 ? '' : rawUrl.slice(qIdx); // keep exact query string
 
-    // 1) Redirects — matched before rewrites (Vercel order: headers → redirects → rewrites → filesystem)
-    const params = new URLSearchParams(query);
-    function conditionsOk(conds, wantPresent) {
-      for (const c of (conds || [])) {
-        if (c.type !== 'query') continue;
-        const present = params.has(c.key) && (c.value === undefined || params.get(c.key) === c.value);
-        if (present !== wantPresent) return false;
-      }
-      return true;
-    }
-    for (const rule of redirectRules) {
-      const m = rule.re.exec(pathname);
-      if (!m) continue;
-      if (!conditionsOk(rule.missing, false)) continue;
-      if (!conditionsOk(rule.has, true)) continue;
-      const dest = applyDestination(rule.destination, m, rule.params);
-      // Vercel: a query string in the destination replaces the original query
-      const location = dest.indexOf('?') !== -1 ? dest : dest + query;
-      res.writeHead(rule.permanent ? 308 : 307, {
-        Location: location,
-        'Content-Type': 'text/plain; charset=utf-8',
-      });
-      res.end('Redirecting to ' + location);
+    let r;
+    try {
+      r = resolve(pathname, search);
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Simulator error: ' + e.message);
       return;
     }
 
-    // 2) Rewrites — first match wins
-    let matched = null;
-    for (const rule of rules) {
-      const m = rule.re.exec(pathname);
-      if (m) {
-        matched = { rule, match: m };
-        break;
-      }
+    if (r.kind === 'redirect') {
+      res.writeHead(r.status, {
+        Location: r.location,
+        'Content-Type': 'text/plain; charset=utf-8',
+      });
+      res.end('Redirecting to ' + r.location);
+      return;
     }
 
-    let filePath = null;
-    if (matched) {
-      const dest = applyDestination(matched.rule.destination, matched.match, matched.rule.params);
-      filePath = resolveFile(path.normalize(path.join(projectRoot, dest)));
-      if (!filePath) {
-        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Not Found');
-        return;
-      }
-    } else {
-      // 3) Static file fallback (direct file access, directory → index.html)
-      filePath = resolveFile(path.normalize(path.join(projectRoot, pathname)));
-    }
-
-    if (!filePath) {
+    if (r.kind === '404') {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Not Found');
       return;
     }
 
-    const ext = path.extname(filePath).toLowerCase();
+    // r.kind === 'file' (static hit) or 'rewrite' — both stream from disk
+
+    const ext = path.extname(r.filePath).toLowerCase();
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'X-Sim-Rewrite': matched ? matched.rule.source : '(static)',
-      'X-Sim-Dest': matched ? matched.rule.destination : pathname,
+      'X-Sim-Rewrite': r.source,
+      'X-Sim-Dest': r.dest || pathname,
     });
-    fs.createReadStream(filePath).pipe(res);
+    fs.createReadStream(r.filePath).pipe(res);
   });
 
-  return new Promise(resolve => {
-    server.listen(port, '127.0.0.1', () => resolve(server));
+  return new Promise(resolvePromise => {
+    server.listen(port, '127.0.0.1', () => resolvePromise(server));
   });
 }
 
-module.exports = { start, compileSource, applyDestination, loadConfig };
+module.exports = { start, createResolver, compileSource, applyDestination, loadConfig, MIME };
 
 if (require.main === module) {
   const root = path.join(__dirname, '..');

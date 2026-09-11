@@ -5,7 +5,15 @@
       "destination": "/whatsapp-beta/index.html"
     },
     {
+      "source": "/whatsapp-beta/",
+      "destination": "/whatsapp-beta/index.html"
+    },
+    {
       "source": "/platform/whatsapp-beta",
+      "destination": "/platform/whatsapp-beta/index.html"
+    },
+    {
+      "source": "/platform/whatsapp-beta/",
       "destination": "/platform/whatsapp-beta/index.html"
     },
 
@@ -58,6 +66,10 @@
 
     {
       "source": "/platform",
+      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+    },
+    {
+      "source": "/platform/",
       "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
     },
     {

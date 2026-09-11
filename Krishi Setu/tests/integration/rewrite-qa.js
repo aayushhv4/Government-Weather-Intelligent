@@ -61,6 +61,86 @@ function isExternal(ref) {
   return /^(https?:|data:|mailto:|tel:|javascript:|#)/i.test(ref) || ref === '' || ref.indexOf('${') !== -1;
 }
 
+// ------------------------------------------- Vercel ground truth (real routes)
+// The hand-written simulator below can drift from the platform — that is exactly
+// how `/platform/?intent=login` shipped a 404 while simulated QA stayed green.
+// This section does NOT use the simulator: it compiles `vercel.json` with
+// Vercel's OWN compiler (@vercel/routing-utils, the package the Vercel CLI and
+// edge use) and walks the resulting route table the way the edge does, asserting
+// that every URL the product depends on matches a real route instead of falling
+// through to Vercel's `404: NOT_FOUND`.
+function groundTruthTests() {
+  console.log('\n=== 0. Vercel ground truth — real compiled route table (simulator-independent) ===');
+  let ru;
+  try { ru = require('@vercel/routing-utils'); }
+  catch (e) {
+    warn('@vercel/routing-utils not installed — skipping the production-truth route compile (run npm i inside Krishi Setu/tests)', null);
+    return;
+  }
+
+  const cfg = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'vercel.json'), 'utf8'));
+  const compiled = ru.getTransformedRoutes(cfg);
+  check('vercel.json accepted by Vercel\'s own schema + compiler', !compiled.error, compiled.error || { routes: compiled.routes.length });
+  if (compiled.error) return;
+
+  const fsHit = (p) => {
+    const full = path.normalize(path.join(PROJECT_ROOT, p));
+    if (!full.startsWith(PROJECT_ROOT) || !fs.existsSync(full)) return null;
+    if (fs.statSync(full).isFile()) return full;
+    if (fs.statSync(full).isDirectory()) {
+      const idx = path.join(full, 'index.html');
+      if (fs.existsSync(idx) && fs.statSync(idx).isFile()) return idx;
+    }
+    return null;
+  };
+
+  const vercelDecision = (pathname, search) => {
+    const params = new URLSearchParams(search || '');
+    const condOk = (conds, want) => (conds || []).every(c => {
+      if (c.type !== 'query') return true;
+      const present = params.has(c.key) && (c.value === undefined || params.get(c.key) === c.value);
+      return present === want;
+    });
+    for (const r of compiled.routes) {
+      if (r.handle === 'filesystem') { if (fsHit(pathname)) return { kind: 'file', source: '(filesystem)' }; continue; }
+      if (!r.src) continue;
+      if (!new RegExp(r.src).test(pathname)) continue;
+      if (!condOk(r.missing, false) || !condOk(r.has, true)) continue;
+      return r.status
+        ? { kind: 'redirect', status: r.status, dest: r.dest }
+        : { kind: 'rewrite', src: r.src, dest: r.dest };
+    }
+    return { kind: '404' };
+  };
+
+  const simResolve = sim.createResolver(PROJECT_ROOT);
+  const urls = [
+    '/', '/index.html',
+    '/about.html', '/how-it-works.html', '/schemes.html', '/news.html',
+    '/news-article.html?id=news1', '/resources.html', '/impact.html', '/support.html', '/contact.html',
+    '/css/styles.css', '/js/data.js', '/js/main.js', '/js/i18n.js', '/js/auth.js',
+    '/platform', '/platform/', '/platform?intent=login', '/platform/?intent=login', '/platform/dashboard',
+    '/whatsapp-beta', '/whatsapp-beta/', '/whatsapp-beta/index.html',
+    '/whatsapp-beta/css/whatsapp-demo.css', '/whatsapp-beta/js/whatsapp-demo.js',
+    '/platform/whatsapp-beta', '/platform/whatsapp-beta/', '/platform/whatsapp-beta/index.html',
+    '/public-site/government-version/index.html', '/public-site/government-version/about.html',
+    '/platform/public-site/government-version/index.html',
+    '/frontend/LAST_GOV_API_GRAPHS_FINAL.html', '/LAST_GOV_API_GRAPHS_FINAL.html',
+  ];
+  for (const u of urls) {
+    const qi = u.indexOf('?');
+    const p = qi === -1 ? u : u.slice(0, qi);
+    const q = qi === -1 ? '' : u.slice(qi);
+    const v = vercelDecision(p, q);
+    const s = simResolve(p, q);
+    check('production route resolves: ' + u, v.kind !== '404' && v.kind === s.kind, { vercel: v.kind, simulator: s.kind });
+  }
+  for (const u of ['/no-such-page.html', '/api/anything']) {
+    const v = vercelDecision(u, '');
+    check('production still 404s unknown route ' + u, v.kind === '404', { vercel: v.kind });
+  }
+}
+
 // ---------------------------------------------------------------- HTTP mapping
 async function httpMappingTests(BASE) {
   console.log('\n=== A. Final URL mapping (HTTP through Vercel rewrite semantics) ===');
@@ -82,25 +162,26 @@ async function httpMappingTests(BASE) {
     ['/js/main.js', 200, 'javascript', '', '/js/main.js'],
     ['/js/i18n.js', 200, 'javascript', '', '/js/i18n.js'],
     ['/js/auth.js', 200, 'javascript', '', '/js/auth.js'],
-    ['/platform', 307, '', '', '/platform → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
-    ['/platform/', 307, '', '', '/platform/ → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
+    ['/platform', 308, '', '', '/platform → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
+    ['/platform/', 308, '', '', '/platform/ → redirects to /platform/?intent=login (guest login, authed dashboard)', '/platform/?intent=login'],
     ['/platform?intent=login', 200, 'text/html', 'loginPage', '/platform?intent=login → dashboard (redirect skipped via missing query guard)'],
-    ['/platform/?intent=login', 200, 'text/html', 'loginPage', '/platform/?intent=login → dashboard'],
+    ['/platform/?intent=login', 200, 'text/html', 'loginPage', '/platform/?intent=login → dashboard (THE production-404 URL)'],
     ['/platform/dashboard', 200, 'text/html', 'loginPage', '/platform/<deep> → dashboard (SPA fallback)'],
-    ['/platform/whatsapp-beta', 307, '', '', '/platform/whatsapp-beta → redirects to index.html (fixes relative assets)', '/index.html'],
+    ['/platform/whatsapp-beta', 308, '', '', '/platform/whatsapp-beta → redirects to index.html (fixes relative assets)', '/index.html'],
+    ['/platform/whatsapp-beta/', 308, '', '', '/platform/whatsapp-beta/ (trailing slash) → index.html', '/index.html'],
     ['/platform/whatsapp-beta/index.html', 200, 'text/html', 'whatsapp', '/platform/whatsapp-beta/index.html → WhatsApp Beta'],
     ['/platform/whatsapp-beta/js/whatsapp-demo.js', 200, 'javascript', '', '/platform/whatsapp-beta assets (precedence over /platform/:path*)'],
-    ['/whatsapp-beta', 307, '', '', '/whatsapp-beta → redirects to index.html (fixes relative assets)', '/index.html'],
+    ['/whatsapp-beta', 308, '', '', '/whatsapp-beta → redirects to index.html (fixes relative assets)', '/index.html'],
+    ['/whatsapp-beta/', 308, '', '', '/whatsapp-beta/ (trailing slash) → index.html', '/index.html'],
     ['/whatsapp-beta/index.html', 200, 'text/html', 'whatsapp', '/whatsapp-beta/index.html → WhatsApp Beta'],
-    ['/whatsapp-beta/', 200, 'text/html', 'whatsapp', '/whatsapp-beta/'],
     ['/whatsapp-beta/css/whatsapp-demo.css', 200, 'text/css', '', '/whatsapp-beta/css/whatsapp-demo.css'],
     ['/whatsapp-beta/js/whatsapp-demo.js', 200, 'javascript', '', '/whatsapp-beta/js/whatsapp-demo.js'],
     ['/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', '/LAST_GOV_API_GRAPHS_FINAL.html (gov footer platform link)'],
-    ['/public-site/government-version/index.html', 307, '', '', 'guard redirect target → canonical / (exact homepage URL)', '/'],
+    ['/public-site/government-version/index.html', 308, '', '', 'guard redirect target → canonical / (exact homepage URL)', '/'],
     ['/public-site/government-version/about.html', 200, 'text/html', 'Krishi Setu', 'guard redirect target subpage'],
     ['/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet at /public-site base'],
     ['/public-site/government-version/js/main.js', 200, 'javascript', '', 'gov js at /public-site base'],
-    ['/platform/public-site/government-version/index.html', 307, '', '', 'home/logout relative target from /platform/ → canonical /', '/'],
+    ['/platform/public-site/government-version/index.html', 308, '', '', 'home/logout relative target from /platform/ → canonical /', '/'],
     ['/platform/public-site/government-version/css/styles.css', 200, 'text/css', '--green', 'gov stylesheet under /platform/ base'],
     ['/public-site/LAST_GOV_API_GRAPHS_FINAL.html', 200, 'text/html', 'loginPage', 'gov raw platform link at /public-site base'],
     ['/frontend/public-site/government-version/index.html', 200, 'text/html', 'Farm. Connect. Prosper', 'direct static gov path'],
@@ -546,6 +627,7 @@ async function browserTests(BASE) {
   console.log('Vercel-sim project root: ' + PROJECT_ROOT);
   console.log('Simulated deployment base: ' + BASE + '/');
 
+  groundTruthTests();
   await httpMappingTests(BASE);
   await crawlTests(BASE);
   await browserTests(BASE);

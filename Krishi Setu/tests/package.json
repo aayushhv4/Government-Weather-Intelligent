@@ -9,6 +9,7 @@
     "i18n": "node integration/i18n-mobile.js"
   },
   "devDependencies": {
+    "@vercel/routing-utils": "^6.5.0",
     "puppeteer-core": "^23.0.0"
   }
 }
