@@ -143,6 +143,10 @@
       "source": "/js/auth.js",
       "destination": "/frontend/public-site/government-version/js/auth.js"
     },
+    {
+      "source": "/assets/:path*",
+      "destination": "/frontend/public-site/government-version/assets/:path*"
+    },
 
     {
       "source": "/whatsapp-beta/css/whatsapp-demo.css",

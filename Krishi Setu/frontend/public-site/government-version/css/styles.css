@@ -140,8 +140,7 @@ a:hover{color:var(--green-deep)}
 .hero-stat b{display:block;font-size:22px;letter-spacing:-.3px}
 .hero-stat small{font-size:12.5px;color:#cfe9d8}
 .hero-visual{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:20px;text-align:center}
-.hero-visual svg{width:100%;height:auto}
-.hero-visual svg text{font-family:var(--font);font-weight:700}
+.hero-visual .hero-visual-img{display:block;width:100%;height:auto;border-radius:8px;object-fit:cover}
 
 /* Cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
@@ -295,8 +294,7 @@ a:hover{color:var(--green-deep)}
   .hero-stat b{font-size:20px;line-height:1.2}
   .hero-stat small{font-size:11.5px;line-height:1.25;display:block}
   .hero-visual{max-width:360px;padding:10px 14px;margin:0 auto;width:100%}
-  .hero-visual svg{width:100%;height:auto;display:block}
-  .hero-visual svg text{font-size:13px;font-weight:700;fill:#2d4834}
+  .hero-visual .hero-visual-img{width:100%;height:auto;display:block;aspect-ratio:16/9;object-fit:cover}
   .grid-3,.grid-4,.steps-grid,.support-channels{grid-template-columns:1fr}
   .stats-band{grid-template-columns:1fr 1fr;gap:16px}
   .stat b{font-size:24px}
