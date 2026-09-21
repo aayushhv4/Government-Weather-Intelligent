@@ -141,6 +141,7 @@ a:hover{color:var(--green-deep)}
 .hero-stat small{font-size:12.5px;color:#cfe9d8}
 .hero-visual{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:20px;text-align:center}
 .hero-visual svg{width:100%;height:auto}
+.hero-visual svg text{font-family:var(--font);font-weight:700}
 
 /* Cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
@@ -207,6 +208,9 @@ a:hover{color:var(--green-deep)}
 .scheme-card .docs b{color:var(--ink)}
 .scheme-link{margin-top:auto;font-weight:700;font-size:14px}
 .notice{background:var(--gold-soft);border:1px solid #ecd9a0;border-left:5px solid var(--gold);border-radius:6px;padding:14px 16px;font-size:14.5px;color:#5d4300;margin-bottom:20px}
+.demo-notice{background:var(--green-soft);border:1px solid var(--border-strong);border-left:4px solid var(--green);border-radius:var(--radius);padding:14px 18px;margin-top:24px;font-size:14.5px;line-height:1.6}
+.demo-notice p{margin:0;color:var(--ink)}
+.demo-notice strong{color:var(--green-deep)}
 
 /* ================= RESOURCES ================= */
 .resource-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:8px}
@@ -276,6 +280,7 @@ a:hover{color:var(--green-deep)}
   .main-nav a{padding:12px 20px;border-bottom:1px solid var(--border)}
   .main-nav a.active{border-bottom:1px solid var(--border);background:var(--green-soft)}
   .home-hero-inner{grid-template-columns:1fr;padding:40px 20px}
+  .hero-visual{max-width:380px;margin:0 auto;width:100%}
   .hero-stats{grid-template-columns:repeat(3,1fr)}
   .featured-news{grid-template-columns:1fr}
   .contact-grid{grid-template-columns:1fr}
@@ -283,6 +288,10 @@ a:hover{color:var(--green-deep)}
   .stats-band{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:560px){
+  .home-hero-inner{padding:30px 20px 34px;gap:22px}
+  .hero-visual{max-width:290px;padding:10px 12px;margin:0 auto;width:100%}
+  .hero-visual svg{width:100%;height:auto;display:block}
+  .hero-visual svg text{font-size:14.5px;font-weight:800;fill:#2d4834}
   .grid-3,.grid-4,.steps-grid,.support-channels{grid-template-columns:1fr}
   .stats-band{grid-template-columns:1fr 1fr;gap:16px}
   .stat b{font-size:24px}
