@@ -1,0 +1,564 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In â€” Panchayat Weather Intelligence | Localized Agro-Meteorological Decision Support</title>
+<meta name="description" content="Sign in to Panchayat Weather Intelligence. Localized Block-to-Panchayat meteorological decision support platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>âš</text></svg>">
+<script>
+  (function () {
+    var theme = 'light';
+    try {
+      var t = window.localStorage.getItem('pwi-theme');
+      if (t === 'light' || t === 'dark') theme = t;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<link rel="stylesheet" href="app.css">
+<style>
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg);
+  }
+  .auth-container {
+    max-width: 460px;
+    width: 100%;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  .auth-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--amber));
+  }
+  .auth-brand {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .auth-crest {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 14px rgba(15,46,90,0.2);
+  }
+  .auth-title {
+    font-size: 20px;
+    font-weight: 750;
+    color: var(--ink);
+    margin: 0 0 6px;
+    letter-spacing: -0.3px;
+  }
+  .auth-sub {
+    font-size: 13px;
+    color: var(--ink-2);
+    margin: 0;
+  }
+  .auth-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+  }
+  .auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--ink-2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .auth-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  [data-theme="dark"] .auth-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .input-with-action {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--input-bg);
+    color: var(--ink);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+  .input-action-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--ink-3);
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .input-action-btn:hover {
+    color: var(--ink);
+  }
+  .form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    margin-bottom: 20px;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12.5px;
+    padding: 0;
+  }
+  [data-theme="dark"] .link-btn {
+    color: var(--accent);
+  }
+  .auth-submit-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 650;
+    border: none;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .auth-submit-btn:hover {
+    filter: brightness(1.1);
+  }
+  .auth-submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 22px 0;
+    color: var(--ink-3);
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--line);
+  }
+  .auth-divider span {
+    padding: 0 12px;
+  }
+  .demo-btn-block {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-size: 13.5px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .demo-btn-block:hover {
+    border-color: var(--amber);
+    background: var(--amber-bg);
+  }
+  .auth-notice {
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .auth-msg {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    display: none;
+  }
+  .auth-msg.error {
+    display: block;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid var(--critical);
+    color: var(--critical);
+  }
+  .auth-msg.success {
+    display: block;
+    background: rgba(22, 163, 74, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="auth-page">
+
+  <!-- Header strip -->
+  <header class="appheader">
+    <div class="gov-strip">
+      <div class="gov-strip-inner">
+        <span class="gov-crest" aria-hidden="true">â—†</span>
+        <span class="gov-item">Government of India</span>
+        <span class="gov-sep" aria-hidden="true">Â·</span>
+        <span class="gov-item">Ministry of Earth Sciences</span>
+        <span class="gov-sep" aria-hidden="true">Â·</span>
+        <span class="gov-item">India Meteorological Department</span>
+        <span class="gov-note">Institutional context only â€” not an official operational IMD service.</span>
+      </div>
+    </div>
+    <div class="appbar">
+      <a href="index.html" class="brand" style="text-decoration:none">
+        <span class="brand-mark" aria-hidden="true">âš</span>
+        <span class="brand-text">
+          <span class="brand-title">Panchayat Weather Intelligence</span>
+          <span class="brand-sub">Localized Agro-Meteorological Decision Support</span>
+        </span>
+      </a>
+      <div class="appbar-controls">
+        <a href="index.html" class="ctrl-btn" title="Back to Public Portal">
+          <span>â† Back to Platform</span>
+        </a>
+        <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
+          <span id="themeIcon" aria-hidden="true">â˜¾</span>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Card Container -->
+  <main class="auth-container">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-crest" aria-hidden="true">âš</div>
+        <h1 class="auth-title">Agro-Meteorological Portal</h1>
+        <p class="auth-sub">Sign in to access downscaling models, map analytics &amp; advisories</p>
+      </div>
+
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab active" id="tabSignIn" type="button" role="tab" aria-selected="true">Sign In</button>
+        <button class="auth-tab" id="tabSignUp" type="button" role="tab" aria-selected="false">Create Account</button>
+      </div>
+
+      <div id="authAlert" class="auth-msg" role="alert"></div>
+
+      <!-- Sign In Form -->
+      <form id="signInForm" autocomplete="on">
+        <div class="form-group">
+          <label class="form-label" for="signinEmail">Email Address</label>
+          <input class="form-input" type="email" id="signinEmail" required placeholder="e.g. officer@imd.gov.in" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signinPassword">Password</label>
+          <div class="input-with-action">
+            <input class="form-input" type="password" id="signinPassword" required placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="input-action-btn" id="togglePwBtn" title="Toggle password visibility">Show</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="rememberMe" checked>
+            <span>Remember session</span>
+          </label>
+          <button type="button" class="link-btn" id="forgotPwBtn">Forgot password?</button>
+        </div>
+        <button type="submit" class="auth-submit-btn" id="signInSubmit">
+          <span id="signInBtnText">Sign In</span>
+        </button>
+      </form>
+
+      <!-- Create Account Form (Hidden by default) -->
+      <form id="signUpForm" style="display:none" autocomplete="on">
+        <div class="form-group">
+          <label class="form-label" for="signupName">Full Name</label>
+          <input class="form-input" type="text" id="signupName" required placeholder="Dr. R. Sharma" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupEmail">Official / Evaluation Email</label>
+          <input class="form-input" type="email" id="signupEmail" required placeholder="officer@imd.gov.in" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupOrg">Organization / Department</label>
+          <input class="form-input" type="text" id="signupOrg" placeholder="District Agromet Unit, Nashik">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupPassword">Password</label>
+          <div class="input-with-action">
+            <input class="form-input" type="password" id="signupPassword" required minlength="6" placeholder="Min. 6 characters" autocomplete="new-password">
+            <button type="button" class="input-action-btn" id="toggleSignupPwBtn" title="Toggle password visibility">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-submit-btn" id="signUpSubmit">
+          <span id="signUpBtnText">Create Account &amp; Sign In</span>
+        </button>
+      </form>
+
+      <div class="auth-divider">
+        <span>Evaluator &amp; Demo Access</span>
+      </div>
+
+      <!-- Demo Access Button -->
+      <button type="button" class="demo-btn-block" id="demoAccessBtn" title="Instant evaluator sign-in">
+        <span aria-hidden="true" style="font-size:16px">âš–</span>
+        <div style="text-align:left;line-height:1.25">
+          <div style="font-weight:700">Instant Evaluator Access (1-Click)</div>
+          <div style="font-size:11.5px;color:var(--ink-2);font-weight:400">Dr. S. Ramanathan Â· District Agriculture Officer (Nashik / Dindori Pilot)</div>
+        </div>
+      </button>
+
+      <div class="auth-notice">
+        <b>Institutional Access:</b> Evaluators, jury members, and agronomists can sign in with 1 click to test the full pipeline. The public platform remains accessible without sign-in, while active sessions enable administrative validation reports and priority assistant access.
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-inner" style="text-align:center">
+      <div class="foot-product">Panchayat Weather Intelligence</div>
+      <div class="foot-tag">Localized Agro-Meteorological Decision Support Â· Prototype &amp; Evaluation Build</div>
+      <div class="foot-disclaimer" style="margin:0 auto">
+        Institutional context only â€” not an official operational IMD service. Outputs use staged illustrative data and empirical baseline-validated models.
+      </div>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = urlParams.get('returnTo') || 'index.html';
+      const msgParam = urlParams.get('message');
+
+      // Theme toggle handling
+      function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        try { localStorage.setItem('pwi-theme', t); } catch (e) {}
+        $('themeIcon').textContent = t === 'dark' ? 'â˜€' : 'â˜¾';
+        $('themeLabel').textContent = t === 'dark' ? 'Light' : 'Dark';
+        $('themeToggle').setAttribute('aria-pressed', t === 'dark');
+      }
+      $('themeToggle').addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme');
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      });
+      applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
+
+      // Alert helper
+      function showAlert(msg, type = 'error') {
+        const el = $('authAlert');
+        el.className = 'auth-msg ' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+      }
+      function hideAlert() {
+        $('authAlert').style.display = 'none';
+      }
+
+      if (msgParam === 'logged_out') {
+        showAlert('You have been signed out successfully.', 'success');
+      }
+
+      // Tab switching
+      $('tabSignIn').addEventListener('click', () => {
+        $('tabSignIn').classList.add('active');
+        $('tabSignUp').classList.remove('active');
+        $('signInForm').style.display = 'block';
+        $('signUpForm').style.display = 'none';
+        hideAlert();
+      });
+      $('tabSignUp').addEventListener('click', () => {
+        $('tabSignUp').classList.add('active');
+        $('tabSignIn').classList.remove('active');
+        $('signUpForm').style.display = 'block';
+        $('signInForm').style.display = 'none';
+        hideAlert();
+      });
+
+      // Show/Hide password toggles
+      function setupPwToggle(btnId, inputId) {
+        const btn = $(btnId), input = $(inputId);
+        btn.addEventListener('click', () => {
+          const isPw = input.type === 'password';
+          input.type = isPw ? 'text' : 'password';
+          btn.textContent = isPw ? 'Hide' : 'Show';
+        });
+      }
+      setupPwToggle('togglePwBtn', 'signinPassword');
+      setupPwToggle('toggleSignupPwBtn', 'signupPassword');
+
+      // Forgot password handling
+      $('forgotPwBtn').addEventListener('click', () => {
+        const email = $('signinEmail').value.trim();
+        if (!email) {
+          showAlert('Please enter your email address above first to reset your password.', 'error');
+        } else {
+          showAlert('Password reset instructions have been dispatched to ' + email + ' (Evaluation mode: you may also use Explore Demo for immediate access).', 'success');
+        }
+      });
+
+      // Sign In submit
+      $('signInForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert();
+        const btn = $('signInSubmit');
+        const email = $('signinEmail').value.trim();
+        const pw = $('signinPassword').value;
+        const remember = $('rememberMe').checked;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> <span>Verifying credentialsâ€¦</span>';
+
+        try {
+          await new Promise(r => setTimeout(r, 450)); // smooth natural response feel
+          await window.PWI_AUTH.signIn(email, pw, remember);
+          btn.innerHTML = '<span>Success! Redirectingâ€¦</span>';
+          setTimeout(() => {
+            window.location.href = returnTo;
+          }, 350);
+        } catch (err) {
+          showAlert(err.message || 'Failed to sign in. Please verify your credentials.');
+          btn.disabled = false;
+          btn.innerHTML = '<span id="signInBtnText">Sign In</span>';
+        }
+      });
+
+      // Sign Up submit
+      $('signUpForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert();
+        const btn = $('signUpSubmit');
+        const name = $('signupName').value.trim();
+        const email = $('signupEmail').value.trim();
+        const org = $('signupOrg').value.trim();
+        const pw = $('signupPassword').value;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> <span>Creating accountâ€¦</span>';
+
+        try {
+          await new Promise(r => setTimeout(r, 500));
+          await window.PWI_AUTH.signUp(name, email, pw, org);
+          btn.innerHTML = '<span>Account created! Redirectingâ€¦</span>';
+          setTimeout(() => {
+            window.location.href = returnTo;
+          }, 350);
+        } catch (err) {
+          showAlert(err.message || 'Failed to create account.');
+          btn.disabled = false;
+          btn.innerHTML = '<span id="signUpBtnText">Create Account & Sign In</span>';
+        }
+      });
+
+      // Demo Access button
+      $('demoAccessBtn').addEventListener('click', () => {
+        window.PWI_AUTH.demoLogin();
+        showAlert('Demo Access activated. Redirecting to platformâ€¦', 'success');
+        setTimeout(() => {
+          window.location.href = returnTo;
+        }, 300);
+      });
+
+      // If already authenticated and explicit autologin requested
+      if (urlParams.get('autologin') === '1' && window.PWI_AUTH.isAuthenticated()) {
+        const u = window.PWI_AUTH.getUser();
+        showAlert('Active session detected for ' + (u?.name || 'Evaluator') + '. Redirecting to platformâ€¦', 'success');
+        setTimeout(() => {
+          window.location.href = returnTo;
+        }, 400);
+      } else if (window.PWI_AUTH.isAuthenticated()) {
+        const u = window.PWI_AUTH.getUser();
+        showAlert('Active session for ' + (u?.name || 'Evaluator') + ' (' + (u?.email || '') + '). You may sign in with a different account or return to the platform.', 'success');
+      }
+    })();
+  </script>
+</body>
+</html>
+

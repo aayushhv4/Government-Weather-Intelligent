@@ -1,179 +1,95 @@
 {
-  "redirects": [
-    {
-      "source": "/whatsapp-beta",
-      "destination": "/whatsapp-beta/index.html"
-    },
-    {
-      "source": "/whatsapp-beta/",
-      "destination": "/whatsapp-beta/index.html"
-    },
-    {
-      "source": "/platform/whatsapp-beta",
-      "destination": "/platform/whatsapp-beta/index.html"
-    },
-    {
-      "source": "/platform/whatsapp-beta/",
-      "destination": "/platform/whatsapp-beta/index.html"
-    },
-
-    {
-      "source": "/platform",
-      "destination": "/platform/?intent=login",
-      "missing": [
-        {
-          "type": "query",
-          "key": "intent"
-        }
-      ]
-    },
-    {
-      "source": "/platform/",
-      "destination": "/platform/?intent=login",
-      "missing": [
-        {
-          "type": "query",
-          "key": "intent"
-        }
-      ]
-    },
-
-    {
-      "source": "/public-site/government-version/index.html",
-      "destination": "/"
-    },
-    {
-      "source": "/platform/public-site/government-version/index.html",
-      "destination": "/"
-    }
-  ],
-
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/",
-      "destination": "/frontend/public-site/government-version/index.html"
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/website/login.html"
+    },
+    {
+      "source": "/login.html",
+      "destination": "/website/login.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/weather-downscaling",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/map",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/validation",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/advisory",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/alerts",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/provenance",
+      "destination": "/website/index.html"
+    },
+    {
+      "source": "/methodology",
+      "destination": "/website/index.html"
     },
 
     {
-      "source": "/platform/whatsapp-beta/:path*",
-      "destination": "/frontend/whatsapp-beta/:path*"
-    },
-
-    {
-      "source": "/platform/public-site/government-version/:path*",
-      "destination": "/frontend/public-site/government-version/:path*"
-    },
-
-    {
-      "source": "/platform",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+      "source": "/css/:path*",
+      "destination": "/website/css/:path*"
     },
     {
-      "source": "/platform/",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+      "source": "/js/:path*",
+      "destination": "/website/js/:path*"
     },
     {
-      "source": "/platform/:path*",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
-    },
-
-    {
-      "source": "/whatsapp-beta/:path*",
-      "destination": "/frontend/whatsapp-beta/:path*"
-    },
-
-    {
-      "source": "/index.html",
-      "destination": "/frontend/public-site/government-version/index.html"
-    },
-    {
-      "source": "/about.html",
-      "destination": "/frontend/public-site/government-version/about.html"
-    },
-    {
-      "source": "/how-it-works.html",
-      "destination": "/frontend/public-site/government-version/how-it-works.html"
-    },
-    {
-      "source": "/schemes.html",
-      "destination": "/frontend/public-site/government-version/schemes.html"
-    },
-    {
-      "source": "/news.html",
-      "destination": "/frontend/public-site/government-version/news.html"
-    },
-    {
-      "source": "/news-article.html",
-      "destination": "/frontend/public-site/government-version/news-article.html"
-    },
-    {
-      "source": "/resources.html",
-      "destination": "/frontend/public-site/government-version/resources.html"
-    },
-    {
-      "source": "/impact.html",
-      "destination": "/frontend/public-site/government-version/impact.html"
-    },
-    {
-      "source": "/support.html",
-      "destination": "/frontend/public-site/government-version/support.html"
-    },
-    {
-      "source": "/contact.html",
-      "destination": "/frontend/public-site/government-version/contact.html"
-    },
-
-    {
-      "source": "/css/styles.css",
-      "destination": "/frontend/public-site/government-version/css/styles.css"
-    },
-    {
-      "source": "/js/data.js",
-      "destination": "/frontend/public-site/government-version/js/data.js"
-    },
-    {
-      "source": "/js/main.js",
-      "destination": "/frontend/public-site/government-version/js/main.js"
-    },
-    {
-      "source": "/js/i18n.js",
-      "destination": "/frontend/public-site/government-version/js/i18n.js"
-    },
-    {
-      "source": "/js/auth.js",
-      "destination": "/frontend/public-site/government-version/js/auth.js"
+      "source": "/data/:path*",
+      "destination": "/website/data/:path*"
     },
     {
       "source": "/assets/:path*",
-      "destination": "/frontend/public-site/government-version/assets/:path*"
+      "destination": "/website/assets/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     },
 
     {
-      "source": "/whatsapp-beta/css/whatsapp-demo.css",
-      "destination": "/frontend/whatsapp-beta/css/whatsapp-demo.css"
+      "source": "/weather-intel",
+      "destination": "/website/index.html"
     },
     {
-      "source": "/whatsapp-beta/js/whatsapp-demo.js",
-      "destination": "/frontend/whatsapp-beta/js/whatsapp-demo.js"
-    },
-
-    {
-      "source": "/public-site/government-version/:path*",
-      "destination": "/frontend/public-site/government-version/:path*"
+      "source": "/weather-intel/:path*",
+      "destination": "/website/:path*"
     },
     {
-      "source": "/public-site/LAST_GOV_API_GRAPHS_FINAL.html",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+      "source": "/app.css",
+      "destination": "/website/css/website.css"
     },
-
     {
-      "source": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+      "source": "/app.js",
+      "destination": "/website/js/website.js"
     },
-
     {
-      "source": "/LAST_GOV_API_GRAPHS_FINAL.html",
-      "destination": "/frontend/LAST_GOV_API_GRAPHS_FINAL.html"
+      "source": "/demo-bundle.js",
+      "destination": "/website/data/weather-bundle.js"
+    },
+    {
+      "source": "/weather-bundle.js",
+      "destination": "/website/data/weather-bundle.js"
     }
   ]
 }

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panchayat Weather Intelligence — Localized Agro-Meteorological Decision Support</title>
+<meta name="description" content="Panchayat Weather Intelligence is a localized agro-meteorological decision support platform. Block-to-Panchayat weather downscaling with indicative uncertainty, baseline-validated accuracy, honest data provenance and crop-risk advisory. Outputs are based on staged illustrative data and are not an official IMD operational service.">
+<script>
+  // Apply the saved theme before first paint so the page never flashes the wrong mode.
+  (function () {
+    var theme = 'light';        // Light mode is the default for a first visit.
+    var lang = 'en';
+    try {
+      var t = window.localStorage.getItem('pwi-theme');
+      if (t === 'light' || t === 'dark') theme = t;
+      var l = window.localStorage.getItem('pwi-lang');
+      if (l) lang = l;
+    } catch (e) { /* storage unavailable — use defaults */ }
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('lang', lang);
+  })();
+
+  // Live-service base URL, resolved in priority order:
+  //   1. ?api=<url> in the query string — lets you point the static page at a running
+  //      service with no file edits, e.g. http://localhost:8000/?api=http://localhost:8088
+  //   2. window.KS_WEATHER_API_BASE set by the hosting environment before this file loads
+  //   3. unset — the app then uses same-origin when the page is served by the service
+  //      itself, or its relative /weather-api/... rewrite path otherwise
+  // No placeholder localhost URL is ever hard-coded into the shipped asset.
+  (function () {
+    var qsApi = null;
+    try {
+      qsApi = new URLSearchParams(window.location.search).get('api');
+    } catch (e) { qsApi = null; }
+    if (qsApi) {
+      window.KS_WEATHER_API_BASE = qsApi.replace(/\/+$/, '');
+    }
+    if (typeof window.KS_WEATHER_API_BASE === 'undefined') {
+      window.KS_WEATHER_API_BASE = null;
+    }
+  })();
+</script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Institutional shell: context strip, application bar, primary navigation -->
+  <header class="appheader">
+    <div class="gov-strip">
+      <div class="gov-strip-inner">
+        <span class="gov-crest" aria-hidden="true">◆</span>
+        <span class="gov-item">Government of India</span>
+        <span class="gov-sep" aria-hidden="true">·</span>
+        <span class="gov-item">Ministry of Earth Sciences</span>
+        <span class="gov-sep" aria-hidden="true">·</span>
+        <span class="gov-item">India Meteorological Department</span>
+        <span class="gov-note">Institutional context only — this platform is not an official IMD operational service.</span>
+      </div>
+    </div>
+
+    <div class="appbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">⏚</span>
+        <span class="brand-text">
+          <span class="brand-title" data-i18n="app.title">Panchayat Weather Intelligence</span>
+          <span class="brand-sub" data-i18n="app.subtitle">Localized Agro-Meteorological Decision Support</span>
+        </span>
+      </div>
+
+      <div class="appbar-controls">
+        <div class="topbar-status" id="topbarStatus" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Loading data…</span>
+        </div>
+        <div id="topbarUser" style="display:flex;align-items:center;gap:8px"></div>
+        <label class="ctrl-wrap" for="langSelect">
+          <span class="ctrl-label" data-i18n="ctrl.language">Language</span>
+          <select id="langSelect" class="ctrl-select" aria-label="Select language">
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+        </label>
+        <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
+          <span id="themeIcon" aria-hidden="true">☾</span>
+          <span id="themeLabel" data-i18n="ctrl.dark">Dark</span>
+        </button>
+      </div>
+    </div>
+
+    <nav class="appnav" id="topnav" aria-label="Primary">
+      <a href="#overview" class="nav-item" data-route="overview" data-i18n="nav.overview">Overview</a>
+      <a href="#downscale" class="nav-item" data-route="downscale" data-i18n="nav.downscale">Weather Downscaling</a>
+      <a href="#map" class="nav-item" data-route="map" data-i18n="nav.map">Panchayat Map</a>
+      <a href="#validation" class="nav-item" data-route="validation" data-i18n="nav.validation">Validation</a>
+      <a href="#advisory" class="nav-item" data-route="advisory" data-i18n="nav.advisory">Advisory</a>
+      <a href="#alerts" class="nav-item" data-route="alerts" data-i18n="nav.alerts">Alerts<span class="nav-badge" id="alertsBadge" hidden>0</span></a>
+      <a href="#provenance" class="nav-item" data-route="provenance" data-i18n="nav.provenance">Data &amp; Provenance</a>
+      <a href="#methodology" class="nav-item" data-route="methodology" data-i18n="nav.methodology">Methodology</a>
+    </nav>
+  </header>
+
+  <main class="main" id="main">
+    <!-- Each route is a <section>; only the active one is visible. -->
+    <noscript>
+      <div class="empty">This application requires JavaScript to render the weather downscaling,
+      validation and advisory views.</div>
+    </noscript>
+  </main>
+
+  <footer class="foot" id="foot">
+    <div class="foot-inner">
+      <div class="foot-cols">
+        <div>
+          <p class="foot-product">Panchayat Weather Intelligence</p>
+          <p class="foot-tag">Localized Agro-Meteorological Decision Support</p>
+        </div>
+        <div>
+          <p class="foot-h">Data sources &amp; attribution</p>
+          <p class="foot-li">ERA5-Land — Copernicus C3S (attribution)</p>
+          <p class="foot-li">CHIRPS — public domain · MODIS NDVI — NASA open licence</p>
+          <p class="foot-li">India Geodata — CC0-1.0 · DataMeet — ODbL</p>
+          <p class="foot-li">Panchayat boundaries — schematic pilot grid (illustrative)</p>
+        </div>
+        <div>
+          <p class="foot-h">Data status</p>
+          <p class="foot-li" id="footStatus">—</p>
+          <p class="foot-li">Not an official IMD operational service.</p>
+          <p class="foot-li" id="footUpdated">—</p>
+        </div>
+      </div>
+      <p class="foot-disclaimer" id="footDisclaimers"></p>
+    </div>
+  </footer>
+
+  <!-- Live-service indicator banner -->
+  <div class="banner" id="banner" hidden></div>
+  <!-- Toast -->
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="demo-bundle.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+  if (window.PWI_AUTH) {
+    window.PWI_AUTH.updateTopBar();
+  }
+</script>
+</body>
+</html>
