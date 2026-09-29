@@ -1,10 +1,18 @@
 /**
- * Panchayat Weather Intelligence — Standalone Authentication Module
- * Supports:
- *  1. Demo / Evaluator access mode (for judges and offline testing)
- *  2. Local session persistence with SHA-256 password hashing (no plaintext storage)
- *  3. Pluggable Supabase Auth integration when credentials exist in PWI_CONFIG
- *  4. Return-to-page handling, session expiration, and role indicators
+ * Panchayat Weather Intelligence — optional account module
+ *
+ * Account handling is OPTIONAL. Every core feature of the platform works without it.
+ *
+ * This module provides:
+ *   1. Optional local accounts stored only in this browser, with passwords kept as SHA-256 hashes
+ *      (never plaintext). No account data ever leaves the device.
+ *   2. An optional external identity provider (Supabase Auth) that is used only when the operator
+ *      configures it — see js/site-config.js.
+ *   3. A clearly labelled local guest session so signed-out and signed-in states can both be seen.
+ *   4. Session expiry (24 hours), return-to-page handling and a role indicator.
+ *
+ * There is no invented institutional account and no fabricated official e-mail address anywhere in
+ * this module: only accounts the user creates locally, or the local guest session.
  */
 
 (function () {
@@ -13,24 +21,6 @@
   const STORAGE_KEY = 'pwi_auth_session';
   const USERS_STORAGE_KEY = 'pwi_registered_users';
   const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-  // Built-in evaluation credentials for testing
-  const DEMO_USERS = [
-    {
-      email: 'evaluator@sih.gov.in',
-      name: 'Dr. R. Sharma',
-      role: 'Agro-Meteorological Officer (Evaluation)',
-      organization: 'India Meteorological Department (Pilot)',
-      isDemo: true,
-    },
-    {
-      email: 'officer@imd.gov.in',
-      name: 'K. Verma',
-      role: 'District Agromet Specialist',
-      organization: 'IMD Agromet Division (Nashik)',
-      isDemo: false,
-    }
-  ];
 
   async function sha256(text) {
     if (window.crypto && window.crypto.subtle) {
@@ -70,7 +60,7 @@
         id: user.id || 'usr_' + Math.random().toString(36).slice(2, 10),
         name: user.name || user.email.split('@')[0],
         email: user.email,
-        role: user.role || 'Evaluator / Researcher',
+        role: user.role || 'Registered user',
         organization: user.organization || 'Agricultural Meteorology Wing',
         isDemo: !!user.isDemo,
       },
@@ -158,48 +148,17 @@
         }
       }
 
-      // Check registered local users
+      // Local accounts created in this browser
       const registered = getRegisteredUsers();
       const pwHash = await sha256(password);
       const foundUser = registered.find(u => u.email === normEmail);
-      if (foundUser) {
-        if (foundUser.pwHash === pwHash) {
-          return saveSession(foundUser, remember);
-        } else {
-          throw new Error('Invalid email or password.');
-        }
+      if (!foundUser) {
+        throw new Error('No account for this e-mail address is stored in this browser. Create one below, or continue without signing in — the weather tools do not need an account.');
       }
-
-      // Check built-in demo credentials
-      if (normEmail === 'officer@imd.gov.in') {
-        if (password === 'officer2026!') {
-          const u = DEMO_USERS.find(x => x.email === normEmail);
-          return saveSession(u, remember);
-        } else {
-          throw new Error('Invalid email or password.');
-        }
+      if (foundUser.pwHash !== pwHash) {
+        throw new Error('Incorrect password for this account.');
       }
-      if (normEmail === 'evaluator@sih.gov.in') {
-        if (password === 'evaluator2026!' || password.length >= 6) {
-          const u = DEMO_USERS.find(x => x.email === normEmail);
-          return saveSession(u, remember);
-        } else {
-          throw new Error('Invalid email or password.');
-        }
-      }
-
-      // Any valid email format allowed in offline evaluation mode if password is at least 6 chars
-      if (normEmail.includes('@') && password.length >= 6) {
-        return saveSession({
-          email: normEmail,
-          name: normEmail.split('@')[0].replace(/[._-]/g, ' '),
-          role: 'Evaluator / Agromet Analyst',
-          organization: 'Public Sector Meteorological Review',
-          isDemo: true
-        }, remember);
-      }
-
-      throw new Error('Invalid credentials. Password must be at least 6 characters.');
+      return saveSession(foundUser, remember);
     },
 
     async signUp(name, email, password, organization = '') {
@@ -230,18 +189,18 @@
       return saveSession(newUser, true);
     },
 
-    demoLogin(role = 'evaluator') {
-      const demoUser = {
-        id: 'evaluator_' + Date.now().toString(36),
-        name: 'Dr. S. Ramanathan',
-        email: 's.ramanathan@agri.gov.in',
-        role: 'Evaluator',
-        fullRole: 'District Agriculture Officer / Evaluator',
-        jurisdiction: 'Nashik District (Dindori Pilot Block)',
-        organization: 'Department of Agriculture & Agromet Pilot',
+    /** Start a clearly labelled local guest session. No credentials, no server call. */
+    demoLogin() {
+      const guest = {
+        id: 'guest_' + Date.now().toString(36),
+        name: 'Guest session',
+        email: '',
+        role: 'Public visitor',
+        fullRole: 'Local guest session — stored only in this browser',
+        organization: 'Not signed in to an account',
         isDemo: true
       };
-      return saveSession(demoUser, true);
+      return saveSession(guest, true);
     },
 
     signOut() {
@@ -254,6 +213,10 @@
       }
     },
 
+    /**
+     * Only call this for genuinely account-only pages. Core weather features must never be gated:
+     * a public visitor is never redirected away from the workspace.
+     */
     requireAuth(returnUrl) {
       if (!this.isAuthenticated()) {
         const target = returnUrl || window.location.pathname + window.location.hash;
@@ -269,7 +232,7 @@
       const session = getStoredSession();
       if (session && session.user) {
         const u = session.user;
-        const roleLabel = u.role || (u.isDemo ? 'Evaluator' : 'Officer');
+        const roleLabel = u.role || (u.isDemo ? 'Guest' : 'Account holder');
         userBox.innerHTML = `
           <div class="user-pill auth-pill active" title="${u.name} — ${u.fullRole || u.role} (${u.jurisdiction || u.organization || ''})">
             <span class="user-status-dot" style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;box-shadow:0 0 0 2px rgba(22,163,74,0.25)"></span>
@@ -283,14 +246,14 @@
         if (logoutBtn) {
           logoutBtn.addEventListener('click', () => {
             PWI_AUTH.signOut();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
           });
         }
       } else {
         userBox.innerHTML = `
-          <a href="login.html" class="ctrl-btn primary" id="loginBtn" title="Institutional Sign In" style="padding:6px 12px;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
-            <span>Institutional Access</span>
-            <span aria-hidden="true">→</span>
+          <a href="login.html" class="ctrl-btn" id="loginBtn" title="Optional sign in" style="padding:6px 12px;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+            <span>Sign in</span>
+            <span aria-hidden="true">&rarr;</span>
           </a>
         `;
       }

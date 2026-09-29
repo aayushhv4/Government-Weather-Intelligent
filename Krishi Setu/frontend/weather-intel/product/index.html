@@ -1,151 +1,644 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panchayat Weather Intelligence — Localized Agro-Meteorological Decision Support</title>
-<meta name="description" content="Panchayat Weather Intelligence is a localized agro-meteorological decision support platform. Block-to-Panchayat weather downscaling with indicative uncertainty, baseline-validated accuracy, honest data provenance and crop-risk advisory. Outputs are based on staged illustrative data and are not an official IMD operational service.">
+<title>Panchayat Weather Intelligence | Agro-Meteorological Decision Support</title>
+<meta name="description" content="Panchayat Weather Intelligence turns a coarse Block-level forecast into panchayat-level temperature estimates, heat risk and crop advisories. Explore downscaling, maps, validation and the Agro-Meteorological Assistant without signing in.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Panchayat Weather Intelligence">
+<meta property="og:title" content="Panchayat Weather Intelligence | Agro-Meteorological Decision Support">
+<meta property="og:description" content="From Block-level forecasts to localized Panchayat-level agricultural decision support. Downscaling, geographic Panchayat map, validation, crop advisory and a grounded assistant.">
+<meta property="og:image" content="assets/hero-farmer-field.jpg">
+<meta property="og:image:alt" content="Illustrative photograph of an agricultural field used as the platform's social preview image.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Panchayat Weather Intelligence | Agro-Meteorological Decision Support">
+<meta name="twitter:description" content="From Block-level forecasts to localized Panchayat-level agricultural decision support.">
+<meta name="twitter:image" content="assets/hero-farmer-field.jpg">
+<meta name="theme-color" content="#0f4c81">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="css/vendor/leaflet.css">
+<link rel="stylesheet" href="css/website.css">
+<link rel="stylesheet" href="css/site.css">
+<script src="js/site-config.js"></script>
 <script>
-  // Apply the saved theme before first paint so the page never flashes the wrong mode.
+  // Apply the saved theme before first paint so the page never flashes the wrong theme.
   (function () {
-    var theme = 'light';        // Light mode is the default for a first visit.
+    var theme = 'light';
     var lang = 'en';
     try {
       var t = window.localStorage.getItem('pwi-theme');
       if (t === 'light' || t === 'dark') theme = t;
       var l = window.localStorage.getItem('pwi-lang');
       if (l) lang = l;
-    } catch (e) { /* storage unavailable — use defaults */ }
+    } catch (e) {}
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('lang', lang);
   })();
-
-  // Live-service base URL, resolved in priority order:
-  //   1. ?api=<url> in the query string — lets you point the static page at a running
-  //      service with no file edits, e.g. http://localhost:8000/?api=http://localhost:8088
-  //   2. window.KS_WEATHER_API_BASE set by the hosting environment before this file loads
-  //   3. unset — the app then uses same-origin when the page is served by the service
-  //      itself, or its relative /weather-api/... rewrite path otherwise
-  // No placeholder localhost URL is ever hard-coded into the shipped asset.
-  (function () {
-    var qsApi = null;
-    try {
-      qsApi = new URLSearchParams(window.location.search).get('api');
-    } catch (e) { qsApi = null; }
-    if (qsApi) {
-      window.KS_WEATHER_API_BASE = qsApi.replace(/\/+$/, '');
-    }
-    if (typeof window.KS_WEATHER_API_BASE === 'undefined') {
-      window.KS_WEATHER_API_BASE = null;
-    }
-  })();
 </script>
-<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="app" id="app">
 
-  <!-- Institutional shell: context strip, application bar, primary navigation -->
-  <header class="appheader">
+<div class="site" id="siteTop">
+
+  <!-- ============================ INSTITUTIONAL HEADER ============================ -->
+  <header class="site-header">
     <div class="gov-strip">
       <div class="gov-strip-inner">
-        <span class="gov-crest" aria-hidden="true">◆</span>
+        <span class="gov-crest" aria-hidden="true">&#9670;</span>
         <span class="gov-item">Government of India</span>
-        <span class="gov-sep" aria-hidden="true">·</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
         <span class="gov-item">Ministry of Earth Sciences</span>
-        <span class="gov-sep" aria-hidden="true">·</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
         <span class="gov-item">India Meteorological Department</span>
-        <span class="gov-note">Institutional context only — this platform is not an official IMD operational service.</span>
+        <span class="gov-note">Institutional context only — an independent research prototype, not an official operational IMD service.</span>
       </div>
     </div>
 
-    <div class="appbar">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">⏚</span>
-        <span class="brand-text">
-          <span class="brand-title" data-i18n="app.title">Panchayat Weather Intelligence</span>
-          <span class="brand-sub" data-i18n="app.subtitle">Localized Agro-Meteorological Decision Support</span>
-        </span>
-      </div>
+    <div class="site-header-inner">
+      <div class="site-bar">
+        <a href="#siteTop" class="site-brand">
+          <span class="brand-mark" aria-hidden="true">&#9242;</span>
+          <span class="site-brand-text">
+            <span class="site-brand-title">Panchayat Weather Intelligence</span>
+            <span class="site-brand-sub">Localized Agro-Meteorological Decision Support</span>
+          </span>
+        </a>
 
-      <div class="appbar-controls">
-        <div class="topbar-status" id="topbarStatus" aria-live="polite">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Loading data…</span>
+        <div class="site-actions">
+          <label class="ctrl-wrap" for="langSelect">
+            <span class="ctrl-label" style="margin:0 0 4px">Language</span>
+            <select id="langSelect" class="ctrl-select" aria-label="Select language">
+              <option value="en">English</option>
+              <option value="hi">&#2361;&#2367;&#2344;&#2381;&#2342;&#2368;</option>
+            </select>
+          </label>
+          <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
+            <span id="themeIcon" aria-hidden="true">&#9790;</span>
+            <span id="themeLabel">Dark</span>
+          </button>
+          <a href="login.html" class="ctrl-btn" id="signInLink">Sign In</a>
+          <a href="app.html" class="ctrl-btn primary">Explore Weather Intelligence</a>
         </div>
-        <div id="topbarUser" style="display:flex;align-items:center;gap:8px"></div>
-        <label class="ctrl-wrap" for="langSelect">
-          <span class="ctrl-label" data-i18n="ctrl.language">Language</span>
-          <select id="langSelect" class="ctrl-select" aria-label="Select language">
-            <option value="en">English</option>
-            <option value="hi">हिन्दी</option>
-          </select>
-        </label>
-        <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
-          <span id="themeIcon" aria-hidden="true">☾</span>
-          <span id="themeLabel" data-i18n="ctrl.dark">Dark</span>
-        </button>
       </div>
-    </div>
 
-    <nav class="appnav" id="topnav" aria-label="Primary">
-      <a href="#overview" class="nav-item" data-route="overview" data-i18n="nav.overview">Overview</a>
-      <a href="#downscale" class="nav-item" data-route="downscale" data-i18n="nav.downscale">Weather Downscaling</a>
-      <a href="#map" class="nav-item" data-route="map" data-i18n="nav.map">Panchayat Map</a>
-      <a href="#validation" class="nav-item" data-route="validation" data-i18n="nav.validation">Validation</a>
-      <a href="#advisory" class="nav-item" data-route="advisory" data-i18n="nav.advisory">Advisory</a>
-      <a href="#alerts" class="nav-item" data-route="alerts" data-i18n="nav.alerts">Alerts<span class="nav-badge" id="alertsBadge" hidden>0</span></a>
-      <a href="#provenance" class="nav-item" data-route="provenance" data-i18n="nav.provenance">Data &amp; Provenance</a>
-      <a href="#methodology" class="nav-item" data-route="methodology" data-i18n="nav.methodology">Methodology</a>
-    </nav>
+      <nav class="site-nav" id="siteNav" aria-label="Primary Navigation">
+        <button class="site-nav-toggle" id="siteNavToggle" type="button" aria-expanded="false" aria-controls="siteNavMenu">
+          <span class="nav-toggle-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Menu</span>
+        </button>
+        <div class="site-nav-menu" id="siteNavMenu">
+          <a href="#siteTop" class="nav-item">Home</a>
+          <a href="#about" class="nav-item">About</a>
+          <a href="#how-it-works" class="nav-item">How It Works</a>
+          <a href="#capabilities" class="nav-item">Capabilities</a>
+          <a href="app.html#downscale" class="nav-item">Weather Intelligence</a>
+          <a href="app.html#map" class="nav-item">Panchayat Map</a>
+          <a href="app.html#advisory" class="nav-item">Advisory</a>
+          <a href="app.html#methodology" class="nav-item">Methodology</a>
+          <a href="app.html#provenance" class="nav-item">Data &amp; Provenance</a>
+        </div>
+      </nav>
+    </div>
   </header>
 
-  <main class="main" id="main">
-    <!-- Each route is a <section>; only the active one is visible. -->
-    <noscript>
-      <div class="empty">This application requires JavaScript to render the weather downscaling,
-      validation and advisory views.</div>
-    </noscript>
-  </main>
+  <main class="site-main">
 
-  <footer class="foot" id="foot">
-    <div class="foot-inner">
-      <div class="foot-cols">
+    <!-- ============================ HERO ============================ -->
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-inner">
         <div>
-          <p class="foot-product">Panchayat Weather Intelligence</p>
-          <p class="foot-tag">Localized Agro-Meteorological Decision Support</p>
+          <span class="hero-eyebrow">
+            <span aria-hidden="true">&#9670;</span> Agro-meteorological intelligence platform
+          </span>
+          <h1 id="heroTitle">Panchayat Weather Intelligence</h1>
+          <p class="hero-sub">
+            From Block-level forecasts to localized Panchayat-level agricultural decision support.
+          </p>
+          <div class="hero-actions">
+            <a href="app.html" class="ctrl-btn primary">Explore Weather Intelligence</a>
+            <a href="#how-it-works" class="ctrl-btn">How It Works</a>
+          </div>
+          <p class="hero-note">
+            No account is needed to use the weather workspace, the geographic Panchayat map, the
+            validation view or the advisory. Sign-in is optional and only used for future
+            saved-Panchayat and alert-subscription features.
+          </p>
         </div>
-        <div>
-          <p class="foot-h">Data sources &amp; attribution</p>
-          <p class="foot-li">ERA5-Land — Copernicus C3S (attribution)</p>
-          <p class="foot-li">CHIRPS — public domain · MODIS NDVI — NASA open licence</p>
-          <p class="foot-li">India Geodata — CC0-1.0 · DataMeet — ODbL</p>
-          <p class="foot-li">Panchayat boundaries — schematic pilot grid (illustrative)</p>
-        </div>
-        <div>
-          <p class="foot-h">Data status</p>
-          <p class="foot-li" id="footStatus">—</p>
-          <p class="foot-li">Not an official IMD operational service.</p>
-          <p class="foot-li" id="footUpdated">—</p>
+
+        <div class="hero-visual" aria-label="Pipeline from block forecast to field action">
+          <div class="hero-visual-title">How a field decision is produced</div>
+          <div class="pipeline">
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">1</span>
+              <span><span class="ps-label">Block Forecast</span><span class="ps-desc"> — one coarse maximum-temperature value for the whole Block</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">2</span>
+              <span><span class="ps-label">Geospatial Intelligence</span><span class="ps-desc"> — elevation, slope, aspect, land cover and vegetation per Panchayat</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">3</span>
+              <span><span class="ps-label">Downscaling</span><span class="ps-desc"> — baseline models plus a Random Forest residual correction</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">4</span>
+              <span><span class="ps-label">Panchayat Forecast</span><span class="ps-desc"> — a differentiated estimate with an indicative range</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">5</span>
+              <span><span class="ps-label">Risk</span><span class="ps-desc"> — compared against configurable crop heat thresholds</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step">
+              <span class="ps-icon" aria-hidden="true">6</span>
+              <span><span class="ps-label">Advisory</span><span class="ps-desc"> — field action, timing window and dispatch guidance</span></span>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">&#8595;</div>
+            <div class="pipeline-step is-final">
+              <span class="ps-icon" aria-hidden="true">7</span>
+              <span><span class="ps-label">Action</span><span class="ps-desc"> — an operational decision a field officer can act on</span></span>
+            </div>
+          </div>
         </div>
       </div>
-      <p class="foot-disclaimer" id="footDisclaimers"></p>
+    </section>
+
+    <!-- ============================ ABOUT / THE PROBLEM ============================ -->
+    <section class="site-section" id="about" aria-labelledby="aboutTitle">
+      <div class="site-kicker">What the platform does</div>
+      <h2 class="site-h2" id="aboutTitle">A block-level forecast hides the differences that matter on the ground</h2>
+      <p class="site-lead">
+        Weather bulletins are issued for an administrative Block — one value for every village
+        inside it. But Panchayats inside the same Block sit at different elevations, face different
+        slopes and carry different land cover, so the temperature each one actually experiences can
+        differ by several degrees. This platform quantifies that difference and turns it into
+        something a field officer can act on.
+      </p>
+
+      <div class="explainer" style="margin-top:28px">
+        <div>
+          <h3 class="site-h3">What goes in</h3>
+          <ul class="explainer-list">
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>Block weather signal</b> — the coarse daily maximum temperature and rainfall issued for the entire Block.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>Elevation and terrain</b> — height above mean sea level, slope and aspect for each Panchayat.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>Environmental predictors</b> — land cover and vegetation index conditions per Panchayat.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>Historical anomaly</b> — how each location's training-period behaviour compares with the Block.</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="site-h3">What comes out</h3>
+          <ul class="explainer-list">
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>One estimate per Panchayat</b> instead of one value for the whole Block.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>An indicative range</b> that states how uncertain the estimate is instead of hiding it.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>A heat-risk class</b> against configurable thresholds for the crop being grown.</span></li>
+            <li><span class="tick" aria-hidden="true">&#10003;</span><span><b>An action</b> — what to do, when to do it, and what to schedule.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ CAPABILITIES ============================ -->
+    <section class="site-section alt" id="capabilities" aria-labelledby="capTitle">
+      <div class="site-kicker">Key capabilities</div>
+      <h2 class="site-h2" id="capTitle">Everything the platform provides</h2>
+      <p class="site-lead">Each capability below is a working part of the product, not a placeholder. Open any one of them from the weather workspace.</p>
+
+      <div class="card-grid" style="margin-top:26px">
+        <article class="feature-card">
+          <span class="feature-icon sky" aria-hidden="true">DS</span>
+          <h3 class="feature-title">Data Status</h3>
+          <p class="feature-desc">States plainly whether the values on screen are live service output or staged illustrative data.</p>
+          <a class="feature-link" href="app.html#provenance">View data status <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon" aria-hidden="true">TD</span>
+          <h3 class="feature-title">Temperature Downscaling</h3>
+          <p class="feature-desc">Converts one Block-level maximum temperature into a separate estimate for every Panchayat.</p>
+          <a class="feature-link" href="app.html#downscale">Run downscaling <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon" aria-hidden="true">B1</span>
+          <h3 class="feature-title">Block Baseline</h3>
+          <p class="feature-desc">The do-nothing benchmark: every Panchayat simply receives the Block value. The model has to beat it.</p>
+          <a class="feature-link" href="app.html#methodology">See the baseline <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon" aria-hidden="true">B2</span>
+          <h3 class="feature-title">Elevation Baseline</h3>
+          <p class="feature-desc">A physical lapse-rate benchmark that already improves on the Block copy, and is easy to reason about.</p>
+          <a class="feature-link" href="app.html#methodology">See the baseline <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon green" aria-hidden="true">RF</span>
+          <h3 class="feature-title">Random Forest Correction</h3>
+          <p class="feature-desc">A residual model that learns the terrain-driven temperature offset each Panchayat needs.</p>
+          <a class="feature-link" href="app.html#methodology">How it is trained <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon green" aria-hidden="true">PF</span>
+          <h3 class="feature-title">Panchayat Forecast</h3>
+          <p class="feature-desc">The reconciled estimate for each Panchayat together with its indicative P10–P90 range.</p>
+          <a class="feature-link" href="app.html#downscale">See the forecast <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon amber" aria-hidden="true">HR</span>
+          <h3 class="feature-title">Heat Risk</h3>
+          <p class="feature-desc">Classifies each estimate as normal, moderate or high against configurable crop thresholds.</p>
+          <a class="feature-link" href="app.html#map">Open the risk map <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon amber" aria-hidden="true">CA</span>
+          <h3 class="feature-title">Crop Advisory</h3>
+          <p class="feature-desc">Turns the risk class into a field action, an operating window and a dispatch decision.</p>
+          <a class="feature-link" href="app.html#advisory">Open advisory <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon sky" aria-hidden="true">PM</span>
+          <h3 class="feature-title">Panchayat Map</h3>
+          <p class="feature-desc">A real geographic map coloured by temperature, risk, elevation or where the model changed the Block value.</p>
+          <a class="feature-link" href="app.html#map">Open the map <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon" aria-hidden="true">VL</span>
+          <h3 class="feature-title">Validation</h3>
+          <p class="feature-desc">Reanalysis hindcast error and skill scores for the model and both baselines, published from the model artefact.</p>
+          <a class="feature-link" href="app.html#validation">Review validation <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon green" aria-hidden="true">AI</span>
+          <h3 class="feature-title">Agro-Meteorological Assistant</h3>
+          <p class="feature-desc">Explains the published numbers in plain language, grounded only in the values the model produced.</p>
+          <a class="feature-link" href="app.html#overview">Ask the assistant <span aria-hidden="true">&#8594;</span></a>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon sky" aria-hidden="true">DP</span>
+          <h3 class="feature-title">Data Provenance</h3>
+          <p class="feature-desc">Sources, attributions, boundary status and every honesty disclosure collected in one place.</p>
+          <a class="feature-link" href="app.html#provenance">Read provenance <span aria-hidden="true">&#8594;</span></a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================ HOW IT WORKS ============================ -->
+    <section class="site-section" id="how-it-works" aria-labelledby="hiwTitle">
+      <div class="site-kicker">How it works</div>
+      <h2 class="site-h2" id="hiwTitle">Nine steps from a Block bulletin to a field action</h2>
+      <p class="site-lead">The pipeline is fully deterministic and inspectable. Nothing is generated by the assistant; the assistant only explains what the pipeline published.</p>
+
+      <div class="method-grid" style="margin-top:26px">
+        <div>
+          <div class="method-step">
+            <div class="ms-num">1</div>
+            <div>
+              <h4>Block forecast</h4>
+              <p>One daily maximum-temperature value and rainfall total for the entire administrative Block, taken from the configured service or the bundled staged fixture.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">2</div>
+            <div>
+              <h4>Geospatial features</h4>
+              <p>Elevation, slope, aspect, land cover and vegetation index are assembled for every Panchayat and joined to the weather record by Panchayat identifier.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">3</div>
+            <div>
+              <h4>Baseline models</h4>
+              <p>Two named benchmarks are computed: the Block copy (B1) and an elevation lapse-rate model (B2) that applies a standard environmental lapse rate to each Panchayat's elevation.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">4</div>
+            <div>
+              <h4>Random Forest residual correction</h4>
+              <p>A trained model predicts the temperature offset each Panchayat needs relative to the Block value, using the geospatial predictors.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">5</div>
+            <div>
+              <h4>Panchayat forecast</h4>
+              <p>The corrected estimates are reconciled so their area-weighted mean still equals the original Block value — the Block total is preserved, not invented.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="method-step">
+            <div class="ms-num">6</div>
+            <div>
+              <h4>Uncertainty</h4>
+              <p>An empirical P10–P90 range is attached to every Panchayat so the estimate is presented with its spread, labelled indicative and uncalibrated.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">7</div>
+            <div>
+              <h4>Risk detection</h4>
+              <p>Each estimate is compared with the configured heat-stress thresholds for the selected crop and classified as normal, moderate or high.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">8</div>
+            <div>
+              <h4>Crop advisory</h4>
+              <p>The risk class maps to a concrete recommendation, an operating window and a dispatch decision from the advisory rule set.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">9</div>
+            <div>
+              <h4>Farmer action</h4>
+              <p>The chain ends in something a person can actually do — advance the harvest, shift spraying, start an irrigation cycle, secure storage.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:26px">
+        <a href="app.html#methodology" class="ctrl-btn">Open the full methodology <span aria-hidden="true">&#8594;</span></a>
+      </div>
+    </section>
+
+    <!-- ============================ LIVE PRODUCT PREVIEW ============================ -->
+    <section class="site-section alt" id="preview" aria-labelledby="previewTitle">
+      <div class="site-kicker">Live product preview</div>
+      <h2 class="site-h2" id="previewTitle">See Panchayat-level intelligence</h2>
+      <p class="site-lead">
+        This preview is rendered from the same staged dataset the workspace uses. Open the full
+        platform to change the forecast window, switch baselines, explore the map and run advisories.
+      </p>
+
+      <div class="preview-frame" style="margin-top:26px">
+        <div class="preview-bar">
+          <span class="preview-bar-title" id="pvTitle">Pilot block · Dindori, Nashik, Maharashtra</span>
+          <span class="preview-status" id="pvStatus"><span class="status-dot"></span> Data status: staged illustrative data</span>
+        </div>
+        <div class="preview-body">
+          <div class="preview-panel">
+            <div class="preview-panel-title">Block forecast — the coarse input</div>
+            <div class="preview-value"><span id="pvBlockTemp">&#8212;</span></div>
+            <div class="preview-sub" id="pvBlockMeta">Loading bundled pilot snapshot…</div>
+
+            <div class="preview-panel-title" style="margin-top:18px">Panchayat estimates — the downscaled output</div>
+            <div class="preview-bars" id="pvBars"></div>
+            <div class="preview-sub" id="pvSpread"></div>
+          </div>
+
+          <div class="preview-panel">
+            <div class="preview-panel-title">Geographic spread</div>
+            <div class="preview-map" id="pvMap" role="img" aria-label="Map of the pilot block showing Panchayat temperature estimates"></div>
+            <div class="preview-panel-title" style="margin-top:16px">Selected Panchayat</div>
+            <div id="pvSelected" class="preview-sub">Select a Panchayat from the list to inspect its estimate.</div>
+            <div class="pwi-popup-actions" id="pvActions" style="margin-top:12px"></div>
+          </div>
+        </div>
+        <div class="preview-foot">
+          <span class="preview-status" id="pvFoot">Illustrative boundaries — not official Gram Panchayat boundaries.</span>
+          <a href="app.html" class="ctrl-btn primary">Explore the full platform</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ WHY IT MATTERS ============================ -->
+    <section class="site-section" id="why-it-matters" aria-labelledby="whyTitle">
+      <div class="site-kicker">Why it matters</div>
+      <h2 class="site-h2" id="whyTitle">Who uses Panchayat-scale weather information</h2>
+      <p class="site-lead">The value of the platform is that a single Block bulletin stops hiding local differences. Here is who that helps, and how.</p>
+
+      <div class="tile-grid" style="margin-top:26px">
+        <div class="tile green">
+          <h3 class="tile-title">Farmers</h3>
+          <p class="tile-text">Get a local heat estimate and a matching action for the crop actually being grown — advance the harvest, shift spraying, irrigate before dawn.</p>
+        </div>
+        <div class="tile sky">
+          <h3 class="tile-title">Agricultural advisors</h3>
+          <p class="tile-text">Work Panchayat by Panchayat instead of Block by Block, and see which villages in a Block need attention first.</p>
+        </div>
+        <div class="tile">
+          <h3 class="tile-title">Planners</h3>
+          <p class="tile-text">Read a spatial picture of intra-block temperature variation to target irrigation, storage or crop-planning support.</p>
+        </div>
+        <div class="tile amber">
+          <h3 class="tile-title">Decision-makers</h3>
+          <p class="tile-text">Use a transparent, validated modelling workflow with published baselines and disclosed uncertainty rather than an unexplained number.</p>
+        </div>
+      </div>
+      <p class="site-p" style="margin-top:20px;max-width:820px">
+        This is a research and demonstration platform. It shows what the method can do on a pilot
+        Block with staged data; it does not claim measured field impact.
+      </p>
+    </section>
+
+    <!-- ============================ SIGNATURE FEATURES ============================ -->
+    <section class="site-section alt" id="signature" aria-labelledby="sigTitle">
+      <div class="site-kicker">Signature features</div>
+      <h2 class="site-h2" id="sigTitle">Three things this platform does that a weather dashboard does not</h2>
+
+      <div class="tile-grid" style="margin-top:26px">
+        <div class="tile">
+          <h3 class="tile-title">Why This Panchayat?</h3>
+          <p class="tile-text">
+            For any Panchayat, the platform shows exactly how its estimate was built: the Block
+            baseline, the terrain-driven model correction, the reconciliation adjustment and the
+            final value. Two Panchayats in the same Block can legitimately differ, and the
+            decomposition shows why — without claiming causation.
+          </p>
+          <p style="margin:12px 0 0"><a class="feature-link" href="app.html#overview">See a decomposition <span aria-hidden="true">&#8594;</span></a></p>
+        </div>
+        <div class="tile green">
+          <h3 class="tile-title">Weather &rarr; Action Chain</h3>
+          <p class="tile-text">
+            A five-step chain that runs from the forecast, through local risk and crop impact, to a
+            recommended action and an operational decision. It is the difference between being told
+            the temperature and knowing what to do about it.
+          </p>
+          <p style="margin:12px 0 0"><a class="feature-link" href="app.html#advisory">Open the action chain <span aria-hidden="true">&#8594;</span></a></p>
+        </div>
+        <div class="tile sky">
+          <h3 class="tile-title">Agro-Meteorological Assistant</h3>
+          <p class="tile-text">
+            Ask why one Panchayat is hotter, what a forecast means for a specific crop, or which
+            Panchayat carries the highest risk. The assistant answers from the structured model
+            output — it cannot invent a temperature and cannot change the forecast. If no AI provider
+            is configured it falls back to a deterministic local explanation.
+          </p>
+          <p style="margin:12px 0 0"><a class="feature-link" href="app.html#overview">Ask the assistant <span aria-hidden="true">&#8594;</span></a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ DATA TRUST ============================ -->
+    <section class="site-section" id="data-trust" aria-labelledby="trustTitle">
+      <div class="site-kicker">Data trust</div>
+      <h2 class="site-h2" id="trustTitle">What you are looking at, stated plainly</h2>
+      <p class="site-lead">Every number in the workspace carries the same status. Detailed source-by-source provenance lives in the Data &amp; Provenance section of the platform.</p>
+
+      <dl class="trust-grid" style="margin-top:26px">
+        <div class="trust-item">
+          <dt>Data sources</dt>
+          <dd>Staged illustrative inputs<span>The Block forecast and hindcast reference are generated fixtures; published adapters exist for reanalysis and station data.</span></dd>
+        </div>
+        <div class="trust-item">
+          <dt>Model</dt>
+          <dd>Random Forest residual correction<span>Trained on historical reference data with a fixed seed and a named version, with geospatial predictors as inputs.</span></dd>
+        </div>
+        <div class="trust-item">
+          <dt>Validation</dt>
+          <dd>Reanalysis hindcast<span>Errors and skill are measured against the two named baselines on a held-out period — not operational forecast skill.</span></dd>
+        </div>
+        <div class="trust-item">
+          <dt>Uncertainty</dt>
+          <dd>Indicative &mdash; uncalibrated<span>Ranges are empirical residual quantiles. No coverage test has been run, and the platform says so.</span></dd>
+        </div>
+        <div class="trust-item">
+          <dt>Boundaries</dt>
+          <dd>Illustrative &mdash; not official<span>Panchayat polygons are derived geometry over the pilot Block envelope, never presented as official Gram Panchayat boundaries.</span></dd>
+        </div>
+        <div class="trust-item">
+          <dt>Data status</dt>
+          <dd>Staged illustrative data<span>If a live service is unavailable the platform falls back to a bundled snapshot and labels it, rather than implying live data.</span></dd>
+        </div>
+      </dl>
+
+      <p style="margin-top:22px"><a href="app.html#provenance" class="ctrl-btn">Read full provenance <span aria-hidden="true">&#8594;</span></a></p>
+    </section>
+
+    <!-- ============================ FAQ ============================ -->
+    <section class="site-section alt" id="faq" aria-labelledby="faqTitle">
+      <div class="site-kicker">Questions</div>
+      <h2 class="site-h2" id="faqTitle">Frequently asked questions</h2>
+
+      <div class="faq" style="margin-top:22px">
+        <details>
+          <summary>How does Panchayat-level downscaling work?</summary>
+          <div class="faq-answer">
+            The platform starts from one Block-level maximum temperature. For each Panchayat it
+            assembles terrain and environmental predictors — elevation, slope, aspect, land cover and
+            vegetation condition. Two baselines are computed (a Block copy and an elevation
+            lapse-rate model), and a Random Forest residual model predicts the extra offset each
+            Panchayat needs. The corrected values are then reconciled so their area-weighted mean
+            still matches the original Block value.
+          </div>
+        </details>
+        <details>
+          <summary>What data does the system use?</summary>
+          <div class="faq-answer">
+            A Block weather signal, Panchayat-level terrain and land-surface attributes, and a
+            historical reference series used to train and validate the model. In this build the
+            weather signal and the hindcast reference are staged illustrative fixtures, and this is
+            disclosed everywhere the values appear. The adapters for reanalysis and station data
+            exist but report unavailable until those sources are configured.
+          </div>
+        </details>
+        <details>
+          <summary>Is this an official IMD forecast?</summary>
+          <div class="faq-answer">
+            No. This is an independent research and demonstration platform. The national
+            institutional context is shown for framing only, and the product states clearly that it
+            is not an official operational India Meteorological Department service. For official
+            warnings and forecasts, always consult IMD.
+          </div>
+        </details>
+        <details>
+          <summary>How is the model validated?</summary>
+          <div class="faq-answer">
+            With a blocked temporal split: the model is trained on earlier years and tested on a
+            held-out later period, without shuffling. Error metrics (mean absolute error, root mean
+            square error and bias) and a skill score are reported for the model and for both
+            baselines, together with a leave-one-Panchayat-out spatial check. These are reanalysis
+            hindcast figures — they demonstrate that the pipeline works, not operational forecast
+            skill.
+          </div>
+        </details>
+        <details>
+          <summary>What does the uncertainty range mean?</summary>
+          <div class="faq-answer">
+            Each Panchayat estimate carries a P10–P90 range derived from empirical model residuals.
+            It communicates how much the estimate could reasonably move. The range is labelled
+            indicative and uncalibrated because no formal coverage test has been performed on it.
+          </div>
+        </details>
+        <details>
+          <summary>What happens when live data is unavailable?</summary>
+          <div class="faq-answer">
+            Nothing breaks and nothing is faked. The platform falls back to a bundled deterministic
+            snapshot, marks the data status as staged illustrative data, and — if the map tiles are
+            also unreachable — shows a clearly labelled map fallback while keeping every Panchayat
+            value usable.
+          </div>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div>
+        <div class="foot-product">Panchayat Weather Intelligence</div>
+        <div class="foot-tag">Localized Agro-Meteorological Decision Support</div>
+        <p class="site-p" style="margin-top:10px;max-width:520px">
+          Block-to-Panchayat weather downscaling with baseline-validated modelling, honest
+          provenance and crop-risk advisory for local decision support.
+        </p>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <a href="app.html#overview">Weather workspace</a>
+        <a href="app.html#downscale">Weather downscaling</a>
+        <a href="app.html#map">Panchayat map</a>
+        <a href="app.html#validation">Validation</a>
+        <a href="app.html#advisory">Advisory</a>
+        <a href="app.html#alerts">Alerts</a>
+      </div>
+      <div>
+        <h4>Reference</h4>
+        <a href="#about">About the platform</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="app.html#methodology">Methodology</a>
+        <a href="app.html#provenance">Data &amp; provenance</a>
+        <a href="#faq">Frequently asked questions</a>
+        <a href="login.html">Sign in</a>
+      </div>
+    </div>
+    <div class="site-footer-note">
+      <b>Disclosure.</b> This is an independent research and demonstration platform. It is not an
+      official operational India Meteorological Department service, outputs use staged illustrative
+      data, validation is reanalysis hindcast rather than operational forecast skill, uncertainty is
+      indicative and uncalibrated, and the Panchayat boundaries shown are illustrative rather than
+      official Gram Panchayat boundaries.
     </div>
   </footer>
 
-  <!-- Live-service indicator banner -->
-  <div class="banner" id="banner" hidden></div>
-  <!-- Toast -->
-  <div class="toast" id="toast" hidden></div>
 </div>
 
-<script src="demo-bundle.js"></script>
-<script src="auth.js"></script>
-<script src="app.js"></script>
-<script>
-  if (window.PWI_AUTH) {
-    window.PWI_AUTH.updateTopBar();
-  }
-</script>
+<!-- All scripts are deferred and execute in document order after parsing, so they never block the
+     first paint of the headline content. -->
+<script defer src="js/vendor/leaflet.js"></script>
+<script defer src="data/weather-bundle.js"></script>
+<script defer src="js/pilot-geo.js"></script>
+<script defer src="js/advisory.js"></script>
+<script defer src="js/home.js"></script>
 </body>
 </html>

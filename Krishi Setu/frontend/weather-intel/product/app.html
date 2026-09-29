@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Intelligence Workspace — Panchayat Weather Intelligence</title>
+<meta name="description" content="Explore Block-to-Panchayat temperature downscaling, the geographic Panchayat map, hindcast validation, crop heat-risk advisory and the Agro-Meteorological Assistant. No sign-in required.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Panchayat Weather Intelligence">
+<meta property="og:title" content="Weather Intelligence Workspace — Panchayat Weather Intelligence">
+<meta property="og:description" content="Block-to-Panchayat temperature downscaling, geographic Panchayat map, hindcast validation and crop heat-risk advisory.">
+<meta property="og:image" content="assets/hero-farmer-field.jpg">
+<meta property="og:image:alt" content="Illustrative photograph of an agricultural field used as the platform's social preview image.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Weather Intelligence Workspace — Panchayat Weather Intelligence">
+<meta name="twitter:description" content="Block-to-Panchayat downscaling, geographic Panchayat map, validation, advisory and Agro-Meteorological Assistant.">
+<meta name="twitter:image" content="assets/hero-farmer-field.jpg">
+<meta name="theme-color" content="#0f4c81">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="css/vendor/leaflet.css">
+<script src="js/site-config.js"></script>
+<script>
+  // Apply saved theme immediately before paint to prevent theme flash
+  (function () {
+    var theme = 'light';
+    var lang = 'en';
+    try {
+      var t = window.localStorage.getItem('pwi-theme');
+      if (t === 'light' || t === 'dark') theme = t;
+      var l = window.localStorage.getItem('pwi-lang');
+      if (l) lang = l;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('lang', lang);
+  })();
+</script>
+<link rel="stylesheet" href="css/website.css">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Institutional Header -->
+  <header class="appheader">
+    <div class="gov-strip">
+      <div class="gov-strip-inner">
+        <span class="gov-crest" aria-hidden="true">&#9670;</span>
+        <span class="gov-item">Government of India</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
+        <span class="gov-item">Ministry of Earth Sciences</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
+        <span class="gov-item">India Meteorological Department</span>
+        <span class="gov-note">Institutional context only — an independent research prototype, not an official operational IMD service.</span>
+      </div>
+    </div>
+
+    <div class="appbar">
+      <a href="index.html" class="brand" style="text-decoration:none" title="Back to the public home page">
+        <span class="brand-mark" aria-hidden="true">&#9242;</span>
+        <span class="brand-text">
+          <span class="brand-title" data-i18n="app.title">Panchayat Weather Intelligence</span>
+          <span class="brand-sub" data-i18n="app.subtitle">Localized Agro-Meteorological Decision Support</span>
+        </span>
+      </a>
+
+      <div class="appbar-controls">
+        <div class="topbar-status" id="topbarStatus" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Initializing pilot data…</span>
+        </div>
+
+        <div id="topbarUser" style="display:flex;align-items:center;gap:8px">
+          <!-- Populated dynamically by auth.js -->
+        </div>
+
+        <a href="index.html" class="ctrl-btn" id="homeLink" title="Back to the public home page">
+          <span aria-hidden="true">&larr;</span>
+          <span>Home</span>
+        </a>
+
+        <label class="ctrl-wrap" for="langSelect">
+          <span class="ctrl-label" data-i18n="ctrl.language">Language</span>
+          <select id="langSelect" class="ctrl-select" aria-label="Select language">
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+        </label>
+
+        <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
+          <span id="themeIcon" aria-hidden="true">&#9790;</span>
+          <span id="themeLabel" data-i18n="ctrl.dark">Dark</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Navigation -->
+    <nav class="appnav" id="topnav" aria-label="Primary Navigation">
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navMenu">
+        <span class="nav-toggle-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="nav-toggle-label">Menu</span>
+      </button>
+      <div class="nav-menu" id="navMenu">
+        <a href="#overview" class="nav-item active" data-route="overview" data-i18n="nav.overview">Overview</a>
+        <a href="#downscale" class="nav-item" data-route="downscale" data-i18n="nav.downscale">Weather Downscaling</a>
+        <a href="#map" class="nav-item" data-route="map" data-i18n="nav.map">Panchayat Map</a>
+        <a href="#validation" class="nav-item" data-route="validation" data-i18n="nav.validation">Validation</a>
+        <a href="#advisory" class="nav-item" data-route="advisory" data-i18n="nav.advisory">Advisory</a>
+        <a href="#alerts" class="nav-item" data-route="alerts" data-i18n="nav.alerts">Alerts <span class="nav-badge" id="alertsBadge" hidden>0</span></a>
+        <a href="#provenance" class="nav-item" data-route="provenance" data-i18n="nav.provenance">Data &amp; Provenance</a>
+        <a href="#methodology" class="nav-item" data-route="methodology" data-i18n="nav.methodology">Methodology</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Application Body -->
+  <main class="main" id="main">
+
+    <!-- ==================== SECTION 1: OVERVIEW ==================== -->
+    <section class="section active" id="s-overview">
+      <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,var(--panel),var(--panel-2));border-left:4px solid var(--primary)">
+        <div class="grid-split" style="align-items:center">
+          <div>
+            <div class="eyebrow">Public Sector Agro-Meteorological Platform</div>
+            <h1 class="section-title" data-i18n="hero.title">Panchayat Weather Intelligence</h1>
+            <p class="section-sub" data-i18n="hero.sub" style="margin-bottom:18px">
+              Operational Block → Panchayat downscaling with indicative uncertainty, baseline validation, honest provenance, and actionable agro-meteorological advisories.
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <a href="#downscale" class="ctrl-btn primary" style="padding:9px 18px;font-size:13.5px">Explore Weather Downscaling →</a>
+              <a href="#methodology" class="ctrl-btn" style="padding:9px 16px;font-size:13.5px">View Scientific Methodology</a>
+            </div>
+          </div>
+          <div>
+            <div class="disclaimer-box" style="margin-top:0">
+              <div style="font-weight:750;color:var(--ink);margin-bottom:4px">Scientific &amp; Operational Disclosure</div>
+              <div>Outputs are calibrated on illustrative staged data for pilot block <b>Dindori (LGD-271012, Nashik)</b>. This portal demonstrates localized mathematical downscaling, Random Forest residual corrections, and agronomic decision-support chains. Not an official operational IMD forecast.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid-4" style="margin-bottom:24px">
+        <div class="kpi">
+          <div class="kpi-label">Pilot Block</div>
+          <div class="kpi-value" id="kpiBlock">Dindori (Nashik)</div>
+          <div class="kpi-sub">LGD-271012 · Maharashtra</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Panchayats Monitored</div>
+          <div class="kpi-value" id="kpiPanchayats">11 Pilot Units</div>
+          <div class="kpi-sub">Elevation: 520m – 968m</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Forecast Horizon</div>
+          <div class="kpi-value" id="kpiHorizon">3-Day Cycle</div>
+          <div class="kpi-sub">Lead Days: +1, +2, +3</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Downscaling Engine</div>
+          <div class="kpi-value" id="kpiModel" style="color:var(--primary)">RF Residual (v0.3)</div>
+          <div class="kpi-sub" id="kpiDataMode">Staged Illustrative</div>
+        </div>
+      </div>
+
+      <!-- Selected Panchayat Spotlight & Signature Features -->
+      <div class="card accent" style="margin-bottom:24px">
+        <div class="card-title">
+          <span>Active Focus: <span id="ovSelName" style="color:var(--primary)">Shinde</span> (<span id="ovSelId" style="font-weight:500;font-size:13px;color:var(--ink-3)">LGD-271033</span>)</span>
+          <span class="pill pill-high" id="ovSelRiskBadge">High Risk</span>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:18px">
+          <div style="background:var(--bg-soft);padding:12px;border-radius:8px">
+            <div style="font-size:11.5px;color:var(--ink-3);text-transform:uppercase;font-weight:700">Downscaled Max Temp</div>
+            <div style="font-size:24px;font-weight:750;color:var(--ink);margin:4px 0" id="ovSelTemp">40.1 °C</div>
+            <div style="font-size:12px;color:var(--ink-2)" id="ovSelRange">P10–P90: 38.9 – 41.0 °C</div>
+          </div>
+          <div style="background:var(--bg-soft);padding:12px;border-radius:8px">
+            <div style="font-size:11.5px;color:var(--ink-3);text-transform:uppercase;font-weight:700">Elevation Profile</div>
+            <div style="font-size:24px;font-weight:750;color:var(--ink);margin:4px 0" id="ovSelElev">545 m</div>
+            <div style="font-size:12px;color:var(--ink-2)">Block Mean: 735.7 m (-190.7 m)</div>
+          </div>
+          <div style="background:var(--bg-soft);padding:12px;border-radius:8px">
+            <div style="font-size:11.5px;color:var(--ink-3);text-transform:uppercase;font-weight:700">Indicative Confidence</div>
+            <div style="font-size:24px;font-weight:750;color:var(--primary);margin:4px 0" id="ovSelConfidence">MEDIUM</div>
+            <div style="font-size:12px;color:var(--ink-2)">Consistent with Block Envelope</div>
+          </div>
+        </div>
+
+        <!-- Signature Feature: Why This Panchayat? -->
+        <div style="margin-top:16px">
+          <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px">
+            Signature Feature: Why This Panchayat Differs From The Block Forecast
+          </div>
+          <div class="why-grid">
+            <div class="why-cell">
+              <div class="wc-label">Block Baseline (B1)</div>
+              <div class="wc-val" id="ovWhyB1">38.80 °C</div>
+              <div class="wc-s">Coarse bulletin signal</div>
+            </div>
+            <div class="why-cell">
+              <div class="wc-label">RF Residual f_T(X)</div>
+              <div class="wc-val" id="ovWhyRf" style="color:var(--amber)">+1.34 °C</div>
+              <div class="wc-s">Terrain &amp; geospatial shift</div>
+            </div>
+            <div class="why-cell">
+              <div class="wc-label">Area-Weight Adj.</div>
+              <div class="wc-val" id="ovWhyAdj">-0.08 °C</div>
+              <div class="wc-s">Energy reconciliation</div>
+            </div>
+            <div class="why-cell">
+              <div class="wc-label">Final Panchayat Temp</div>
+              <div class="wc-val" id="ovWhyFin" style="color:var(--critical)">40.06 °C</div>
+              <div class="wc-s">Lapse Rate (B2): <span id="ovWhyB2">40.04 °C</span></div>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ink-3);font-style:italic">
+            Model contribution decomposition, not a causal attribution claim. Baseline B2 is evaluated alongside the model as a named physical benchmark.
+          </div>
+          <div style="margin-top:12px">
+            <button type="button" class="ctrl-btn" id="whyAskAssistant" style="font-size:12px;display:inline-flex;align-items:center;gap:6px">
+              <span aria-hidden="true">&#10022;</span> Ask Assistant to Explain This Decomposition
+            </button>
+          </div>
+        </div>
+
+        <!-- Signature Feature: Weather -> Action Chain -->
+        <div style="margin-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:13.5px;font-weight:700;color:var(--ink)">
+              Signature Feature: Weather → Action Decision Chain
+            </div>
+            <a href="#advisory" class="ctrl-btn" style="padding:4px 10px;font-size:12px">Customize Crop Advisory →</a>
+          </div>
+          <div id="ovChainContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Agro-Meteorological Interactive Assistant Component -->
+      <div class="ai-chat-panel" id="aiChatPanel">
+        <div class="ai-chat-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="copilot-icon" aria-hidden="true">&#10022;</div>
+            <div>
+              <div style="font-size:15px;font-weight:750;color:var(--ink)">Agro-Meteorological Decision Assistant</div>
+              <div style="font-size:12px;color:var(--ink-3)">Multi-turn AI grounded strictly in downscaled pipeline metrics &amp; crop rules.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="cp-mode-badge" id="aiModeBadge">Rule Engine Active</span>
+            <button type="button" class="ctrl-btn" id="aiClearBtn" style="padding:4px 9px;font-size:11.5px" title="Clear conversation history">Clear Chat</button>
+          </div>
+        </div>
+
+        <div class="copilot-chips" id="aiChips">
+          <button type="button" class="cp-chip" data-cp="Which Panchayat is hottest?">Which Panchayat is hottest?</button>
+          <button type="button" class="cp-chip" data-cp="Why is this Panchayat hotter?">Why is this Panchayat hotter?</button>
+          <button type="button" class="cp-chip" data-cp="What should I do for tomato?">What should I do for tomato?</button>
+          <button type="button" class="cp-chip" data-cp="Summarize today's risk">Summarize today's risk</button>
+          <button type="button" class="cp-chip" data-cp="Explain the model result simply">Explain the model result simply</button>
+        </div>
+
+        <!-- Chat messages container -->
+        <div class="chat-messages-container" id="chatMessages" role="log" aria-live="polite">
+          <!-- Populated dynamically by ai.js -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="chat-typing-indicator" id="chatTyping" style="display:none">
+          <span class="typing-avatar" aria-hidden="true">&#10022;</span>
+          <div class="typing-bubble">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px">Analyzing pipeline outputs…</span>
+          </div>
+        </div>
+
+        <div class="copilot-input-row">
+          <input type="text" class="cp-input" id="cpInput" placeholder="Ask about temperature spread, crop thresholds, or field operation windows…">
+          <button type="button" class="cp-btn" id="cpSend">Ask Assistant</button>
+        </div>
+        <div id="cpNote" style="font-size:11px;color:var(--ink-3);padding:0 18px 12px">
+          Thresholds represent configurable agrometeorological rules, not prescriptive farm mandates. Responses are grounded in verified model runs.
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 2: WEATHER DOWNSCALING ==================== -->
+    <section class="section" id="s-downscale">
+      <div class="section-head">
+        <div class="eyebrow">Step 1–5 · Downscaling Pipeline</div>
+        <h2 class="section-title">Block → Panchayat <span class="hl">Thermal Downscaling</span></h2>
+        <p class="section-sub">
+          Translating coarse IMD Block forecasts into granular Gram Panchayat estimates using local elevation, terrain slope/aspect, vegetation indices (NDVI), and Random Forest residual correction.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="grid-split" style="align-items:center">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div>
+              <label style="font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Target Pilot Block</label>
+              <select class="ctrl-select" id="dsBlockSelect" style="min-width:180px">
+                <option value="LGD-271012">Dindori (LGD-271012)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Forecast Window</label>
+              <select class="ctrl-select" id="dsDaysSelect">
+                <option value="3">3 days ahead (default)</option>
+                <option value="2">2 days ahead</option>
+                <option value="1">1 day ahead</option>
+              </select>
+            </div>
+            <div style="padding-top:18px">
+              <button type="button" class="ctrl-btn primary" id="runDownscaleBtn" style="padding:8px 18px">
+                Run Downscaling
+              </button>
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:var(--ink-2);background:var(--bg-soft);padding:10px 14px;border-radius:8px;border:1px solid var(--line)">
+            <b>Coarse input bulletin:</b> Dindori Block maximum temperature <b id="dsBulletinTemp">—</b>, rainfall <b id="dsBulletinRain">—</b>. The pipeline enforces area-weighted mean conservation: <code>&#931;(w_p &#183; T_p) = T_block</code>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Downscaled Output Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>Downscaled Panchayat-Level Results (Dindori Block)</span>
+          <div style="display:flex;gap:8px">
+            <a href="#map" class="ctrl-btn" style="font-size:12px">View on Panchayat Map →</a>
+            <a href="#validation" class="ctrl-btn" style="font-size:12px">View Validation Metrics →</a>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>Panchayat</th>
+                <th>Elevation</th>
+                <th>B1 Block Baseline</th>
+                <th>B2 Lapse-Rate</th>
+                <th>RF Residual f_T(X)</th>
+                <th>Energy Adj.</th>
+                <th>Downscaled Max Temp</th>
+                <th>Heat Risk</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="downscaleTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:12px">
+          <details class="tech-details">
+            <summary>Technical detail: how these values were produced</summary>
+            <div class="tech-details-body">
+              <div><span>model_version</span><code>rf-residual-temp-v0.3</code></div>
+              <div><span>seed</span><code>42</code></div>
+              <div><span>values</span><code>t_max_c · b1_t_max_c · b2_t_max_c · model_raw_t_max_c · range_low_c · range_high_c</code></div>
+              <div><span>uncertainty</span><code>empirical P10–P90 residual quantiles — indicative, uncalibrated</code></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 3: PANCHAYAT MAP ==================== -->
+    <section class="section" id="s-map">        <div class="section-head">
+        <div class="eyebrow">Geospatial Distribution</div>
+        <h2 class="section-title">Geographic Panchayat <span class="hl">Map</span></h2>
+        <p class="section-sub">
+          The pilot block plotted on a real basemap. Panchayat polygons are joined to model results by Panchayat identifier, so one coarse Block value is shown as a spatially differentiated Panchayat estimate.
+        </p>
+      </div>
+
+      <div class="grid-split map-split">
+        <!-- Map Canvas Card -->
+        <div class="card map-card">
+          <div class="map-toolbar">
+            <div class="map-toolbar-group">
+              <label class="ctrl-label" for="mapLayerSelect">Map layer</label>
+              <select class="ctrl-select" id="mapLayerSelect">
+                <option value="temperature">Estimated Temperature</option>
+                <option value="heat">Heat Risk</option>
+                <option value="elevation">Elevation</option>
+                <option value="difference">Downscaling Difference</option>
+              </select>
+            </div>
+            <div class="map-toolbar-group">
+              <label class="ctrl-label" for="mapMethodSelect">Values shown</label>
+              <select class="ctrl-select" id="mapMethodSelect">
+                <option value="final">RF — Residual correction (downscaled output)</option>
+                <option value="b1">B1 — Block copy baseline</option>
+                <option value="b2">B2 — Elevation lapse-rate baseline</option>
+              </select>
+            </div>
+            <div class="map-toolbar-group map-toolbar-btn">
+              <button type="button" class="ctrl-btn" id="mapFitBtn">Fit to Block</button>
+            </div>
+          </div>
+
+          <div class="map-viewport">
+            <div class="map-canvas-container" id="pwiMap" role="application"
+                 aria-label="Geographic map of the Dindori pilot block and its Panchayat temperature estimates"></div>
+            <div class="map-status" id="mapStatus" role="status" style="display:none"></div>
+
+            <!-- Layer Legend -->
+            <div class="map-legend" id="mapLegend">
+              <div class="legend-head" id="mapLegendLabel">Estimated Temperature</div>
+              <div class="legend-row">
+                <span id="mapLegendMin">&#8212;</span>
+                <div class="legend-gradient" id="mapLegendGradient"></div>
+                <span id="mapLegendMax">&#8212;</span>
+              </div>
+              <div class="legend-bands" id="mapLegendBands" style="display:none"></div>
+            </div>
+          </div>
+
+          <p class="map-note" id="mapLayerNote">
+            Downscaled maximum temperature estimate per Panchayat — the model output used by the advisory chain.
+          </p>
+
+          <div class="map-disclosure">
+            <span class="map-disclosure-badge">Illustrative</span>
+            <span><b>Boundaries:</b> Illustrative boundaries — not official Gram Panchayat boundaries. <a href="#provenance">See boundary provenance</a></span>
+          </div>
+        </div>
+
+        <!-- Detail Inspection Drawer / Panel -->
+        <div class="card" id="mapDetailCard">
+          <div class="card-title">
+            <span>Panchayat Details: <span id="mapDetailName" style="color:var(--primary)">Shinde</span></span>
+            <span class="pill pill-info" id="mapDetailConfidence">MEDIUM CONFIDENCE</span>
+          </div>
+
+          <!-- Core Metrics Grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div class="why-cell">
+              <div class="wc-label">Estimated Max Temp</div>
+              <div class="wc-val" id="mapDetailTmax" style="color:var(--critical)">40.1 °C</div>
+              <div class="wc-s" id="mapDetailRange">P10–P90: 38.9 – 41.0 °C</div>
+            </div>
+            <div class="why-cell">
+              <div class="wc-label">Terrain Elevation</div>
+              <div class="wc-val" id="mapDetailElev">545 m</div>
+              <div class="wc-s" id="mapDetailSlope">3.2° slope / 95° aspect</div>
+            </div>
+          </div>
+
+          <!-- Extended Metadata Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px">
+            <div style="background:var(--bg-soft);padding:8px 10px;border-radius:6px">
+              <div style="font-weight:700;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;margin-bottom:3px">LGD Code</div>
+              <div id="mapDetailId" style="color:var(--ink);font-weight:600">LGD-271033</div>
+            </div>
+            <div style="background:var(--bg-soft);padding:8px 10px;border-radius:6px">
+              <div style="font-weight:700;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;margin-bottom:3px">Rainfall (Indicative)</div>
+              <div id="mapDetailRain" style="color:var(--ink);font-weight:600">5.9 mm</div>
+            </div>
+            <div style="background:var(--bg-soft);padding:8px 10px;border-radius:6px">
+              <div style="font-weight:700;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;margin-bottom:3px">Land Cover · NDVI</div>
+              <div style="color:var(--ink);font-weight:600"><span id="mapDetailLandcover">cropland</span> · <span id="mapDetailNdvi">0.41</span></div>
+            </div>
+            <div style="background:var(--bg-soft);padding:8px 10px;border-radius:6px">
+              <div style="font-weight:700;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;margin-bottom:3px">Area · Weight</div>
+              <div style="color:var(--ink);font-weight:600"><span id="mapDetailArea">19.0 km²</span> · <span id="mapDetailWeight">9.09%</span></div>
+            </div>
+          </div>
+
+          <!-- Contributing Terrain Factors -->
+          <div style="font-size:12.5px;margin-bottom:12px">
+            <div style="font-weight:700;color:var(--ink);margin-bottom:4px">Contributing Terrain Factors</div>
+            <div id="mapDetailFeatures"></div>
+            <div style="font-size:12px;color:var(--ink-2);margin-top:6px" id="mapDetailExplain">
+              Lower elevation contributed to higher estimated temperature relative to the block average.
+            </div>
+          </div>
+
+          <!-- Baselines & Correction -->
+          <div style="font-size:12.5px;margin-bottom:12px">
+            <div style="font-weight:700;color:var(--ink);margin-bottom:6px">Why This Panchayat Differs: Decomposition</div>
+            <div class="why-grid" style="grid-template-columns:repeat(2,1fr)">
+              <div class="why-cell">
+                <div class="wc-label">Block Baseline (B1)</div>
+                <div class="wc-val" id="whyB1">38.8 °C</div>
+                <div class="wc-s">Coarse bulletin input</div>
+              </div>
+              <div class="why-cell">
+                <div class="wc-label">RF Residual f_T(X)</div>
+                <div class="wc-val" id="whyRf" style="color:var(--amber)">+1.34 °C</div>
+                <div class="wc-s">Geospatial correction</div>
+              </div>
+              <div class="why-cell">
+                <div class="wc-label">Energy Adj.</div>
+                <div class="wc-val" id="whyAdj">-0.08 °C</div>
+                <div class="wc-s">Area-weight reconciliation</div>
+              </div>
+              <div class="why-cell">
+                <div class="wc-label">Final Estimate</div>
+                <div class="wc-val" id="whyFinal" style="color:var(--critical)">40.06 °C</div>
+                <div class="wc-s">B2 Lapse-Rate: <span id="whyB2">40.04 °C</span></div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--ink-3);background:var(--bg-soft);padding:8px 10px;border-radius:6px;margin-top:8px">
+              RF Raw: <b id="mapDetailRaw">40.14 °C</b> · Local Anomaly: <b id="mapDetailAnomaly">+1.34 °C</b> · Block Copy (B1): <b id="mapDetailB1">38.8 °C</b> · Lapse-Rate (B2): <b id="mapDetailB2">40.04 °C</b>
+            </div>
+          </div>
+
+          <div id="mapDetailProvenance" style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:14px"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button type="button" class="ctrl-btn primary" id="mapDetailGoAdvisory" style="flex:1">View Crop Advisory</button>
+            <button type="button" class="ctrl-btn" id="mapDetailGoValidation">Check Validation</button>
+            <button type="button" class="ctrl-btn" id="mapDetailAskAI" style="flex:1"><span aria-hidden="true">&#10022;</span> Ask Assistant About This Panchayat</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 4: VALIDATION ==================== -->
+    <section class="section" id="s-validation">
+      <div class="section-head">
+        <div class="eyebrow">Scientific Integrity</div>
+        <h2 class="section-title">Baseline Comparison &amp; <span class="hl">Hindcast Validation</span></h2>
+        <p class="section-sub">
+          Comparing the Random Forest Residual model against named, non-trivial baselines (Block Copy B1 and Elevation Lapse-Rate B2). Evaluated on blocked temporal splits with Leave-One-Panchayat-Out (LOPO) cross-validation.
+        </p>
+      </div>
+
+      <div class="disclaimer-box" style="margin-bottom:20px;border-left-color:var(--primary)">
+        <b>Mandatory Scientific Disclosure:</b> Reanalysis hindcast validation — not operational forecast skill. Metrics are calculated on held-out reference reanalysis data (2023–2024 test period), not operational live forecasts. Station ground-truth (Track B) is currently unconfigured.
+      </div>
+
+      <!-- Performance Table -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title" id="valPeriodTitle">Performance metrics vs baselines</div>
+        <div class="table-wrap">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>Method / Model</th>
+                <th>Mean Absolute Error (MAE)</th>
+                <th>Root Mean Square Error (RMSE)</th>
+                <th>Mean Bias</th>
+                <th>Skill Score vs B1 (1 &minus; MAE/MAE_B1)</th>
+              </tr>
+            </thead>
+            <tbody id="valMetricsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <div class="val-chart" id="valChart" role="img" aria-label="Chart comparing mean absolute error between the two baselines and the model"></div>
+        <div class="val-meta" id="valMeta"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Consistency &amp; Reconciliation Check</div>
+          <div id="valConsistencyStatus">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Validation Protocol Details</div>
+          <div style="font-size:12.5px;color:var(--ink-2);line-height:1.6">
+            <div><b>Temporal Split:</b> Train 2015–2022 (8 years), Test 2023–2024 (2 years) — strictly blocked (no random row shuffle).</div>
+            <div><b>Spatial Evaluation:</b> Leave-One-Panchayat-Out (LOPO) spatial cross-validation confirms spatial transferability.</div>
+            <div><b>Uncertainty Calibration:</b> P10–P90 residual quantiles are indicative and uncalibrated against formal coverage tests.</div>
+            <div><b>Pre-Adjustment Evaluation:</b> Metrics computed on raw model residuals prior to energy-conservation adjustments.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 5: ADVISORY ==================== -->
+    <section class="section" id="s-advisory">
+      <div class="section-head">
+        <div class="eyebrow">Decision Support</div>
+        <h2 class="section-title">Agro-Meteorological <span class="hl">Crop Advisory</span></h2>
+        <p class="section-sub">
+          Translating localized Panchayat heat stress into crop-specific protection actions, field operation hours, and harvest dispatch planning.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="grid-split" style="align-items:center">
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            <div>
+              <label style="font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Target Panchayat</label>
+              <select class="ctrl-select" id="advisoryPanchayatSelect" style="min-width:200px">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Cultivated Crop</label>
+              <select class="ctrl-select" id="advisoryCropSelect" style="min-width:160px">
+                <option value="tomato">Tomato</option>
+                <option value="onion">Onion</option>
+                <option value="grape">Grape</option>
+                <option value="wheat">Wheat</option>
+                <option value="soybean">Soybean</option>
+                <option value="banana">Banana</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--ink-2);background:var(--bg-soft);padding:10px 14px;border-radius:8px">
+            Advisory logic applies deterministic temperature thresholds configured by agricultural meteorologists. AI assistants interpret this guidance but never modify threshold rules.
+          </div>
+        </div>
+      </div>
+
+      <!-- Advisory Output Container -->
+      <div class="card accent-amber" id="advisoryResultCard" style="margin-bottom:24px">
+        <div id="advisoryResultContent">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Threshold Reference Table -->
+      <div class="card">
+        <div class="card-title">Configured Heat Stress Thresholds by Crop</div>
+        <div class="table-wrap">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>Crop</th>
+                <th>Moderate Risk Trigger</th>
+                <th>High Risk Trigger</th>
+                <th>Recommended Field Operation Adjustment</th>
+              </tr>
+            </thead>
+            <tbody id="advisoryThresholdBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 6: ALERTS ==================== -->
+    <section class="section" id="s-alerts">
+      <div class="section-head">
+        <div class="eyebrow">Monitoring &amp; Early Warning</div>
+        <h2 class="section-title">Agro-Meteorological <span class="hl">Alert Centre</span></h2>
+        <p class="section-sub">
+          Automated alerts triggered when downscaled temperature estimates cross crop vulnerability thresholds.
+        </p>
+      </div>
+
+      <div id="alertsListContainer">
+        <!-- Dynamically populated by website.js -->
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 7: PROVENANCE ==================== -->
+    <section class="section" id="s-provenance">
+      <div class="section-head">
+        <div class="eyebrow">Scientific Transparency</div>
+        <h2 class="section-title">Data Sources &amp; <span class="hl">Provenance</span></h2>
+        <p class="section-sub">
+          Complete disclosure of input data sources, models, boundaries, and licensing.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Platform Data Pipeline Architecture</div>
+        <div class="table-wrap">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Source / Dataset</th>
+                <th>Status in this Build</th>
+                <th>Licensing &amp; Attribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Block Weather Input</b></td>
+                <td>IMD Gridded / Seeded Block Fixture</td>
+                <td><span class="pill pill-medium">Staged Illustrative</span></td>
+                <td>Generated test fixture</td>
+              </tr>
+              <tr>
+                <td><b>Hindcast Reference</b></td>
+                <td>ERA5-Land (Copernicus Climate Change Service)</td>
+                <td><span class="pill pill-info">Synthetic Deterministic</span></td>
+                <td>Copernicus C3S Licence (Attribution)</td>
+              </tr>
+              <tr>
+                <td><b>Panchayat Boundaries</b></td>
+                <td>Schematic Pilot Regular Grid</td>
+                <td><span class="pill pill-medium">Illustrative Schematic</span></td>
+                <td>Synthetic placeholder (replace with DataMeet GP)</td>
+              </tr>
+              <tr>
+                <td><b>Vegetation Index (NDVI)</b></td>
+                <td>MODIS Terra/Aqua 250m</td>
+                <td><span class="pill pill-none">NASA Open Data</span></td>
+                <td>NASA Open Data Policy</td>
+              </tr>
+              <tr>
+                <td><b>Elevation &amp; Terrain</b></td>
+                <td>SRTM DEM 30m / GEBCO</td>
+                <td><span class="pill pill-none">Public Domain</span></td>
+                <td>USGS / NASA Open Access</td>
+              </tr>
+              <tr>
+                <td><b>Machine Learning Model</b></td>
+                <td>Random Forest Residual Model (seed 42)</td>
+                <td><span class="pill pill-none">Trained Engine (v0.3)</span></td>
+                <td>Panchayat Weather Intelligence scientific engine</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="disclaimer-box">
+        <b>Data Integrity Guarantee:</b> This platform never pretends synthetic or staged evaluation data is a live operational IMD service. If external APIs or weather data services are disconnected, all fallbacks remain honest and clearly labelled.
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 8: METHODOLOGY ==================== -->
+    <section class="section" id="s-methodology">
+      <div class="section-head">
+        <div class="eyebrow">Scientific Architecture</div>
+        <h2 class="section-title">Downscaling <span class="hl">Methodology</span></h2>
+        <p class="section-sub">
+          The 8-step agro-meteorological downscaling pipeline from Block bulletin to farm-level decision support.
+        </p>
+      </div>
+
+      <div class="method-grid">
+        <div>
+          <div class="method-step">
+            <div class="ms-num">1</div>
+            <div>
+              <h4>Block Forecast Ingestion</h4>
+              <p>Receives coarse daily maximum temperature (B_t) and rainfall for the entire administrative Block.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">2</div>
+            <div>
+              <h4>Geospatial Feature Extraction</h4>
+              <p>Extracts localized elevation (z_p), slope, aspect, land cover, and NDVI for each Gram Panchayat.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">3</div>
+            <div>
+              <h4>Named Physical Baselines</h4>
+              <p>Computes B1 (uniform Block copy) and B2 (environmental lapse rate: -6.5 °C/km) to benchmark performance.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">4</div>
+            <div>
+              <h4>Random Forest Residual Correction</h4>
+              <p>Applies trained residual model: <code>T_p = B_t + f_T(X_p)</code>, capturing non-linear terrain thermal influences.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="method-step">
+            <div class="ms-num">5</div>
+            <div>
+              <h4>Mean-Preserving Reconciliation</h4>
+              <p>Performs area-weighted adjustment: <code>T*_p = T_p + (B_t &minus; &#931; w_p &#183; T_p)</code> to guarantee block energy conservation.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">6</div>
+            <div>
+              <h4>Indicative Uncertainty Bounds</h4>
+              <p>Calculates empirical P10–P90 residual quantiles per Panchayat to communicate forecast uncertainty honestly.</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">7</div>
+            <div>
+              <h4>Hindcast Validation</h4>
+              <p>Evaluates MAE, RMSE, and Skill Score against independent temporal splits (2023–2024 test window).</p>
+            </div>
+          </div>
+          <div class="method-step">
+            <div class="ms-num">8</div>
+            <div>
+              <h4>Weather → Action Advisory Chain</h4>
+              <p>Maps downscaled temperature to crop vulnerability thresholds, delivering concrete operational field directives.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Institutional Footer -->
+  <footer class="foot">
+    <div class="foot-inner">
+      <div class="foot-cols">
+        <div>
+          <div class="foot-product">Panchayat Weather Intelligence</div>
+          <div class="foot-tag">Localized Agro-Meteorological Decision Support</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:10px">
+            Autonomous decision-support architecture for Gram Panchayat level agro-climate risk management.
+          </div>
+        </div>
+        <div>
+          <div class="foot-h">Scientific Citations &amp; Sources</div>
+          <div class="foot-li">ERA5-Land: Copernicus Climate Change Service</div>
+          <div class="foot-li">CHIRPS 0.05° Gridded Rainfall: UCSB Climate Hazards</div>
+          <div class="foot-li">MODIS 250m Land Surface &amp; NDVI: NASA EOSDIS</div>
+          <div class="foot-li">Admin Boundaries: India Geodata / DataMeet Pilot Grid</div>
+        </div>
+        <div>
+          <div class="foot-h">Data Governance</div>
+          <div class="foot-li">Pilot Block: Dindori (LGD-271012), Nashik</div>
+          <div class="foot-li">Data mode: Staged illustrative data</div>
+          <div class="foot-li">Service status: research prototype (not an operational IMD service)</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:16px;text-align:center;font-size:11.5px;color:var(--ink-3)">
+        Panchayat Weather Intelligence &#183; Localized Agro-Meteorological Decision Support &#183; research and demonstration platform
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Element -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Scripts in dependency order: mapping library, bundled data, then application modules -->
+<script src="js/vendor/leaflet.js"></script>
+<script src="data/weather-bundle.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/pilot-geo.js"></script>
+<script src="js/map.js"></script>
+<script src="js/advisory.js"></script>
+<script src="js/ai.js"></script>  <script src="js/website.js"></script>
+  <script src="js/table-stack.js"></script>
+</body>
+</html>

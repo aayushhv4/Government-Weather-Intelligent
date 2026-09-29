@@ -1,95 +1,57 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "headers": [
     {
-      "source": "/",
-      "destination": "/website/index.html"
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=()" }
+      ]
     },
     {
-      "source": "/login",
-      "destination": "/website/login.html"
+      "source": "/(.*).html",
+      "headers": [{ "key": "Content-Type", "value": "text/html; charset=utf-8" }]
     },
     {
-      "source": "/login.html",
-      "destination": "/website/login.html"
-    },
-    {
-      "source": "/app",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/weather-downscaling",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/map",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/validation",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/advisory",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/alerts",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/provenance",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/methodology",
-      "destination": "/website/index.html"
-    },
-
-    {
-      "source": "/css/:path*",
-      "destination": "/website/css/:path*"
-    },
-    {
-      "source": "/js/:path*",
-      "destination": "/website/js/:path*"
-    },
-    {
-      "source": "/data/:path*",
-      "destination": "/website/data/:path*"
-    },
-    {
-      "source": "/assets/:path*",
-      "destination": "/website/assets/:path*"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-
-    {
-      "source": "/weather-intel",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/weather-intel/:path*",
-      "destination": "/website/:path*"
-    },
-    {
-      "source": "/app.css",
-      "destination": "/website/css/website.css"
-    },
-    {
-      "source": "/app.js",
-      "destination": "/website/js/website.js"
-    },
-    {
-      "source": "/demo-bundle.js",
-      "destination": "/website/data/weather-bundle.js"
-    },
-    {
-      "source": "/weather-bundle.js",
-      "destination": "/website/data/weather-bundle.js"
+      "source": "/(css|js|data)/:path*",
+      "headers": [{ "key": "Content-Type", "value": "charset=utf-8" }]
     }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/frontend/weather-intel/product/index.html" },
+    { "source": "/index.html", "destination": "/frontend/weather-intel/product/index.html" },
+
+    { "source": "/about", "destination": "/frontend/weather-intel/product/index.html" },
+    { "source": "/how-it-works", "destination": "/frontend/weather-intel/product/index.html" },
+    { "source": "/faq", "destination": "/frontend/weather-intel/product/index.html" },
+
+    { "source": "/app", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/app.html", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/weather", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/weather-downscaling", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/map", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/validation", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/advisory", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/alerts", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/provenance", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/data", "destination": "/frontend/weather-intel/product/app.html" },
+    { "source": "/methodology", "destination": "/frontend/weather-intel/product/app.html" },
+
+    { "source": "/login", "destination": "/frontend/weather-intel/product/login.html" },
+    { "source": "/login.html", "destination": "/frontend/weather-intel/product/login.html" },
+
+    { "source": "/favicon.svg", "destination": "/frontend/weather-intel/product/favicon.svg" },
+    { "source": "/robots.txt", "destination": "/frontend/weather-intel/product/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+
+    { "source": "/css/:path*", "destination": "/frontend/weather-intel/product/css/:path*" },
+    { "source": "/js/:path*", "destination": "/frontend/weather-intel/product/js/:path*" },
+    { "source": "/data/:path*", "destination": "/frontend/weather-intel/product/data/:path*" },
+    { "source": "/assets/:path*", "destination": "/frontend/weather-intel/product/assets/:path*" },
+
+    { "source": "/api/:path*", "destination": "/api/:path*" }
   ]
 }

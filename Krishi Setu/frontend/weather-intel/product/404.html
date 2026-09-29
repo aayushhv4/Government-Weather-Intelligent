@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page not found — Panchayat Weather Intelligence</title>
+<meta name="description" content="The page you requested could not be found. Return to the Panchayat Weather Intelligence home page or open the weather intelligence workspace.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f4c81">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script>
+  (function () {
+    var theme = 'light';
+    try {
+      var t = window.localStorage.getItem('pwi-theme');
+      if (t === 'light' || t === 'dark') theme = t;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/website.css">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="notfound-page">
+
+  <header class="appheader">
+    <div class="gov-strip">
+      <div class="gov-strip-inner">
+        <span class="gov-crest" aria-hidden="true">&#9670;</span>
+        <span class="gov-item">Government of India</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
+        <span class="gov-item">Ministry of Earth Sciences</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
+        <span class="gov-item">India Meteorological Department</span>
+        <span class="gov-note">Institutional context only — an independent research prototype, not an official operational IMD service.</span>
+      </div>
+    </div>
+    <div class="appbar">
+      <a href="/" class="brand" style="text-decoration:none">
+        <span class="brand-mark" aria-hidden="true">&#9242;</span>
+        <span class="brand-text">
+          <span class="brand-title">Panchayat Weather Intelligence</span>
+          <span class="brand-sub">Localized Agro-Meteorological Decision Support</span>
+        </span>
+      </a>
+      <div class="appbar-controls">
+        <a href="/" class="ctrl-btn"><span aria-hidden="true">&larr;</span><span>Home</span></a>
+        <a href="/app" class="ctrl-btn primary">Explore Weather Intelligence</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="notfound-main">
+    <div class="notfound-card">
+      <div class="notfound-code">Error 404</div>
+      <h1>Page not found</h1>
+      <p>
+        The page you requested does not exist on this site, or it may have moved.
+        Nothing is broken in the weather pipeline — only this address is missing.
+      </p>
+      <div class="notfound-actions">
+        <a href="/" class="ctrl-btn primary" style="padding:10px 20px;font-size:14px">Back to Home</a>
+        <a href="/app" class="ctrl-btn" style="padding:10px 20px;font-size:14px">Explore Weather Intelligence</a>
+      </div>
+      <div class="notfound-links">
+        <a href="/how-it-works">How it works</a>
+        <a href="/map">Panchayat map</a>
+        <a href="/advisory">Advisory</a>
+        <a href="/methodology">Methodology</a>
+        <a href="/data">Data &amp; provenance</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner" style="grid-template-columns:1fr">
+      <div>
+        <h4>Panchayat Weather Intelligence</h4>
+        <p class="site-p" style="max-width:640px">
+          A research and demonstration platform for Block-to-Panchayat weather downscaling and
+          agro-meteorological decision support. Outputs use staged illustrative data and are not an
+          official operational forecast service.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

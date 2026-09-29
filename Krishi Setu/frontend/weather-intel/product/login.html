@@ -1,14 +1,23 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign In â€” Panchayat Weather Intelligence | Localized Agro-Meteorological Decision Support</title>
-<meta name="description" content="Sign in to Panchayat Weather Intelligence. Localized Block-to-Panchayat meteorological decision support platform.">
+<title>Optional Sign In — Panchayat Weather Intelligence</title>
+<meta name="description" content="Optional sign in for Panchayat Weather Intelligence. Every weather, map, validation and advisory feature is available without an account.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Panchayat Weather Intelligence">
+<meta property="og:title" content="Optional Sign In — Panchayat Weather Intelligence">
+<meta property="og:description" content="An account is optional. The weather workspace, map, validation and advisory are open to everyone.">
+<meta property="og:image" content="assets/hero-farmer-field.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f4c81">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>âš</text></svg>">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="js/site-config.js"></script>
 <script>
   (function () {
     var theme = 'light';
@@ -19,7 +28,8 @@
     document.documentElement.setAttribute('data-theme', theme);
   })();
 </script>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="css/website.css">
+<link rel="stylesheet" href="css/site.css">
 <style>
   .auth-page {
     min-height: 100vh;
@@ -284,29 +294,32 @@
   <header class="appheader">
     <div class="gov-strip">
       <div class="gov-strip-inner">
-        <span class="gov-crest" aria-hidden="true">â—†</span>
+        <span class="gov-crest" aria-hidden="true">&#9670;</span>
         <span class="gov-item">Government of India</span>
-        <span class="gov-sep" aria-hidden="true">Â·</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
         <span class="gov-item">Ministry of Earth Sciences</span>
-        <span class="gov-sep" aria-hidden="true">Â·</span>
+        <span class="gov-sep" aria-hidden="true">&#183;</span>
         <span class="gov-item">India Meteorological Department</span>
-        <span class="gov-note">Institutional context only â€” not an official operational IMD service.</span>
+        <span class="gov-note">Institutional context only — an independent research prototype, not an official operational IMD service.</span>
       </div>
     </div>
     <div class="appbar">
-      <a href="index.html" class="brand" style="text-decoration:none">
-        <span class="brand-mark" aria-hidden="true">âš</span>
+      <a href="index.html" class="brand" style="text-decoration:none" title="Back to the public home page">
+        <span class="brand-mark" aria-hidden="true">&#9242;</span>
         <span class="brand-text">
           <span class="brand-title">Panchayat Weather Intelligence</span>
           <span class="brand-sub">Localized Agro-Meteorological Decision Support</span>
         </span>
       </a>
       <div class="appbar-controls">
-        <a href="index.html" class="ctrl-btn" title="Back to Public Portal">
-          <span>â† Back to Platform</span>
+        <a href="index.html" class="ctrl-btn" title="Back to the public home page">
+          <span>&larr; Back to Home</span>
+        </a>
+        <a href="app.html" class="ctrl-btn primary" title="Use the weather tools without signing in">
+          <span>Explore Weather Intelligence</span>
         </a>
         <button class="ctrl-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch colour theme">
-          <span id="themeIcon" aria-hidden="true">â˜¾</span>
+          <span id="themeIcon" aria-hidden="true">&#9790;</span>
           <span id="themeLabel">Dark</span>
         </button>
       </div>
@@ -317,9 +330,15 @@
   <main class="auth-container">
     <div class="auth-card">
       <div class="auth-brand">
-        <div class="auth-crest" aria-hidden="true">âš</div>
-        <h1 class="auth-title">Agro-Meteorological Portal</h1>
-        <p class="auth-sub">Sign in to access downscaling models, map analytics &amp; advisories</p>
+        <div class="auth-crest" aria-hidden="true">&#9242;</div>
+        <h1 class="auth-title">Optional account</h1>
+        <p class="auth-sub">An account is <b>not required</b> to use the weather workspace, the Panchayat map, validation, advisory or the assistant. Sign in only if you want a stored account for future saved-Panchayat and alert-subscription features.</p>
+      </div>
+
+      <div class="auth-notice" style="margin:0 0 18px">
+        <b>How this works in this build:</b> accounts are created and stored only in this browser,
+        with passwords kept as SHA-256 hashes. No authentication server is configured, so no account
+        data is transmitted anywhere.
       </div>
 
       <div class="auth-tabs" role="tablist">
@@ -333,7 +352,7 @@
       <form id="signInForm" autocomplete="on">
         <div class="form-group">
           <label class="form-label" for="signinEmail">Email Address</label>
-          <input class="form-input" type="email" id="signinEmail" required placeholder="e.g. officer@imd.gov.in" autocomplete="username">
+          <input class="form-input" type="email" id="signinEmail" required placeholder="your own e-mail address" autocomplete="username">
         </div>
         <div class="form-group">
           <label class="form-label" for="signinPassword">Password</label>
@@ -358,15 +377,15 @@
       <form id="signUpForm" style="display:none" autocomplete="on">
         <div class="form-group">
           <label class="form-label" for="signupName">Full Name</label>
-          <input class="form-input" type="text" id="signupName" required placeholder="Dr. R. Sharma" autocomplete="name">
+          <input class="form-input" type="text" id="signupName" required placeholder="Your name" autocomplete="name">
         </div>
         <div class="form-group">
-          <label class="form-label" for="signupEmail">Official / Evaluation Email</label>
-          <input class="form-input" type="email" id="signupEmail" required placeholder="officer@imd.gov.in" autocomplete="email">
+          <label class="form-label" for="signupEmail">Email Address</label>
+          <input class="form-input" type="email" id="signupEmail" required placeholder="your own e-mail address" autocomplete="email">
         </div>
         <div class="form-group">
-          <label class="form-label" for="signupOrg">Organization / Department</label>
-          <input class="form-input" type="text" id="signupOrg" placeholder="District Agromet Unit, Nashik">
+          <label class="form-label" for="signupOrg">Organization (optional)</label>
+          <input class="form-input" type="text" id="signupOrg" placeholder="Organization or department">
         </div>
         <div class="form-group">
           <label class="form-label" for="signupPassword">Password</label>
@@ -381,20 +400,22 @@
       </form>
 
       <div class="auth-divider">
-        <span>Evaluator &amp; Demo Access</span>
+        <span>No account needed</span>
       </div>
 
-      <!-- Demo Access Button -->
-      <button type="button" class="demo-btn-block" id="demoAccessBtn" title="Instant evaluator sign-in">
-        <span aria-hidden="true" style="font-size:16px">âš–</span>
+      <!-- Continue without an account -->
+      <button type="button" class="demo-btn-block" id="demoAccessBtn" title="Continue without an account">
+        <span aria-hidden="true" style="font-size:16px">&#8594;</span>
         <div style="text-align:left;line-height:1.25">
-          <div style="font-weight:700">Instant Evaluator Access (1-Click)</div>
-          <div style="font-size:11.5px;color:var(--ink-2);font-weight:400">Dr. S. Ramanathan Â· District Agriculture Officer (Nashik / Dindori Pilot)</div>
+          <div style="font-weight:700">Continue without signing in</div>
+          <div style="font-size:11.5px;color:var(--ink-2);font-weight:400">Opens the weather intelligence workspace. A clearly labelled local guest session is used, with no credentials and no server call.</div>
         </div>
       </button>
 
       <div class="auth-notice">
-        <b>Institutional Access:</b> Evaluators, jury members, and agronomists can sign in with 1 click to test the full pipeline. The public platform remains accessible without sign-in, while active sessions enable administrative validation reports and priority assistant access.
+        <b>What an account would add later:</b> saved Panchayats, stored preferences, alert
+        subscriptions and personal history. Those features are not implemented in this build, so
+        nothing on the platform is hidden behind a sign-in today.
       </div>
     </div>
   </main>
@@ -402,26 +423,27 @@
   <footer class="foot">
     <div class="foot-inner" style="text-align:center">
       <div class="foot-product">Panchayat Weather Intelligence</div>
-      <div class="foot-tag">Localized Agro-Meteorological Decision Support Â· Prototype &amp; Evaluation Build</div>
+      <div class="foot-tag">Localized Agro-Meteorological Decision Support</div>
       <div class="foot-disclaimer" style="margin:0 auto">
-        Institutional context only â€” not an official operational IMD service. Outputs use staged illustrative data and empirical baseline-validated models.
+        Independent research prototype — not an official operational IMD service. Outputs use staged illustrative data and baseline-validated modelling.
       </div>
     </div>
   </footer>
 
-  <script src="auth.js"></script>
+  <script src="js/auth.js"></script>
   <script>
     (function () {
       const $ = (id) => document.getElementById(id);
       const urlParams = new URLSearchParams(window.location.search);
-      const returnTo = urlParams.get('returnTo') || 'index.html';
+      // Default destination is the weather workspace — signing in is never a gate in front of it.
+      const returnTo = urlParams.get('returnTo') || 'app.html';
       const msgParam = urlParams.get('message');
 
       // Theme toggle handling
       function applyTheme(t) {
         document.documentElement.setAttribute('data-theme', t);
         try { localStorage.setItem('pwi-theme', t); } catch (e) {}
-        $('themeIcon').textContent = t === 'dark' ? 'â˜€' : 'â˜¾';
+        $('themeIcon').textContent = t === 'dark' ? '\u2600' : '\u263E';
         $('themeLabel').textContent = t === 'dark' ? 'Light' : 'Dark';
         $('themeToggle').setAttribute('aria-pressed', t === 'dark');
       }
@@ -475,13 +497,10 @@
       setupPwToggle('toggleSignupPwBtn', 'signupPassword');
 
       // Forgot password handling
+      // Password recovery is genuinely not implemented in this build, so the page says so
+      // instead of pretending that a reset e-mail was sent.
       $('forgotPwBtn').addEventListener('click', () => {
-        const email = $('signinEmail').value.trim();
-        if (!email) {
-          showAlert('Please enter your email address above first to reset your password.', 'error');
-        } else {
-          showAlert('Password reset instructions have been dispatched to ' + email + ' (Evaluation mode: you may also use Explore Demo for immediate access).', 'success');
-        }
+        showAlert('Password recovery is not enabled in this build: accounts exist only in this browser and there is no mail service configured. Create a new account, or continue without signing in — the weather tools need no account.', 'error');
       });
 
       // Sign In submit
@@ -494,12 +513,12 @@
         const remember = $('rememberMe').checked;
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> <span>Verifying credentialsâ€¦</span>';
+        btn.innerHTML = '<span class="spinner"></span> <span>Verifying credentials…</span>';
 
         try {
           await new Promise(r => setTimeout(r, 450)); // smooth natural response feel
           await window.PWI_AUTH.signIn(email, pw, remember);
-          btn.innerHTML = '<span>Success! Redirectingâ€¦</span>';
+          btn.innerHTML = '<span>Success! Redirecting…</span>';
           setTimeout(() => {
             window.location.href = returnTo;
           }, 350);
@@ -521,12 +540,12 @@
         const pw = $('signupPassword').value;
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> <span>Creating accountâ€¦</span>';
+        btn.innerHTML = '<span class="spinner"></span> <span>Creating account…</span>';
 
         try {
           await new Promise(r => setTimeout(r, 500));
           await window.PWI_AUTH.signUp(name, email, pw, org);
-          btn.innerHTML = '<span>Account created! Redirectingâ€¦</span>';
+          btn.innerHTML = '<span>Account created! Redirecting…</span>';
           setTimeout(() => {
             window.location.href = returnTo;
           }, 350);
@@ -540,7 +559,7 @@
       // Demo Access button
       $('demoAccessBtn').addEventListener('click', () => {
         window.PWI_AUTH.demoLogin();
-        showAlert('Demo Access activated. Redirecting to platformâ€¦', 'success');
+        showAlert('Guest session started — opening the weather workspace.', 'success');
         setTimeout(() => {
           window.location.href = returnTo;
         }, 300);
@@ -549,16 +568,16 @@
       // If already authenticated and explicit autologin requested
       if (urlParams.get('autologin') === '1' && window.PWI_AUTH.isAuthenticated()) {
         const u = window.PWI_AUTH.getUser();
-        showAlert('Active session detected for ' + (u?.name || 'Evaluator') + '. Redirecting to platformâ€¦', 'success');
+        showAlert('Active session detected for ' + (u?.name || 'this browser') + '. Opening the weather workspace.', 'success');
         setTimeout(() => {
           window.location.href = returnTo;
         }, 400);
       } else if (window.PWI_AUTH.isAuthenticated()) {
         const u = window.PWI_AUTH.getUser();
-        showAlert('Active session for ' + (u?.name || 'Evaluator') + ' (' + (u?.email || '') + '). You may sign in with a different account or return to the platform.', 'success');
+        const who = u?.email ? u.name + ' (' + u.email + ')' : (u?.name || 'this browser');
+        showAlert('An active local session exists for ' + who + '. You can sign in with a different account, sign out from the workspace, or continue straight to the weather tools.', 'success');
       }
     })();
   </script>
 </body>
 </html>
-
