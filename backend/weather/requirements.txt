@@ -1,0 +1,19 @@
+# Panchayat Weather Intelligence (SIH26074) — Localized Agro-Meteorological Decision Support
+# Downscaling service dependencies. PINNED for reproducibility (PRD S13).
+#
+# PRD target runtime is Python 3.11; this build was verified on Python 3.14 with
+# the pins below. No dependency is added "just in case": everything listed is
+# imported by the service.
+#
+# Geospatial raster stacks named in the PRD (geopandas, rasterio, xarray) are
+# listed in requirements-geo.txt, because the adapters that would consume them
+# (ERA5-Land NetCDF, CHIRPS GeoTIFF, MODIS NDVI) are interface-only in this
+# build — no raster product is staged. Installing them is not required to run
+# or test anything in this service, and this file must stay installable in a
+# constrained hackathon environment.
+
+numpy==2.5.3
+scikit-learn==1.9.1
+fastapi==0.141.1
+pydantic==2.13.5
+uvicorn[standard]==0.54.0

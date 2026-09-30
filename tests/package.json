@@ -1,0 +1,12 @@
+{
+  "name": "panchayat-weather-intelligence-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless verification and integration tests for Panchayat Weather Intelligence.",
+  "scripts": {
+    "test": "node test-production-website.js"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

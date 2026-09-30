@@ -4,17 +4,15 @@ Localized agro-meteorological decision support: a coarse Block-level weather sig
 Panchayat-level temperature estimates, heat risk and crop advisories, with an interactive geographic
 map, published validation and an assistant that explains — but never invents — the numbers.
 
-This folder is the complete, self-contained, fully static product. It has no build step, no
-framework and no serverless functions — plain HTML, CSS and JavaScript. (A serverless function
-cannot be used from this repository: Vercel derives function names from the repo path, and
-`Krishi Setu/…` contains a space, which the platform rejects at build time.)
+This folder is the complete, self-contained, fully static frontend application. It has no build step,
+no framework and no serverless function requirement — plain HTML5, Vanilla CSS and modern JavaScript.
 
 ---
 
 ## Structure
 
 ```
-
+website/
 ├── index.html                 Public home page (what it is, why, how it works, live preview, FAQ)
 ├── app.html                   Weather intelligence workspace (analytics + map + advisory + assistant)
 ├── login.html                 Optional sign-in / account page
@@ -22,6 +20,7 @@ cannot be used from this repository: Vercel derives function names from the repo
 ├── robots.txt                 Crawler policy
 ├── favicon.svg                Site icon
 ├── sitemap.xml                Static sitemap (root-relative <loc> entries)
+├── vercel.json                Vercel deployment configuration, security headers & routing rewrites
 ├── README.md                  This file
 ├── css/
 │   ├── website.css            Base design system: tokens, dual themes, components
@@ -40,7 +39,7 @@ cannot be used from this repository: Vercel derives function names from the repo
 │   ├── auth.js                Optional local accounts and guest session
 │   └── vendor/leaflet.js      Vendored mapping library (Leaflet 1.9.4)
 ├── data/
-│   └── weather-bundle.js      Committed offline snapshot (no build step on deploy)      Bundled deterministic snapshot (pilot block, 11 Panchayats, 3 lead days)
+│   └── weather-bundle.js      Committed offline snapshot (pilot block, 11 Panchayats, 3 lead days)
 └── assets/
     └── hero-farmer-field.jpg  Social preview image (illustrative photograph)
 ```
@@ -49,7 +48,7 @@ cannot be used from this repository: Vercel derives function names from the repo
 
 ## Running locally
 
-Any static file server works. From this folder:
+Any static file server works. From the repository root:
 
 ```bash
 cd website
@@ -61,60 +60,49 @@ Then open <http://localhost:8000/>.
 The site is fully usable offline: it loads the bundled snapshot from `data/weather-bundle.js` and
 labels the data status as *staged illustrative data*. Two local-only notes:
 
-* The assistant tries `window.PWI_CONFIG.AI_ENDPOINT` if you configure one; with no endpoint set
+* The assistant queries `window.PWI_CONFIG.AI_ENDPOINT` if you configure one; with no endpoint set
   it uses its deterministic local interpreter immediately. The panel never hangs either way.
 * The extension-less routes (`/app`, `/map`, `/about`, …) are Vercel rewrites. Locally use
   `app.html` and the in-page links, which are identical on both.
 
-To run the scientific service as well, start it from the backend folder (it is already complete):
+To run the scientific downscaling service as well, start it from the backend folder:
 
 ```bash
-cd "Krishi Setu/backend/weather"
-../.venv-weather/Scripts/uvicorn ksweather.app:app --host 0.0.0.0 --port 8088 --workers 1
+cd backend/weather
+python -m uvicorn ksweather.app:app --host 0.0.0.0 --port 8088 --workers 1
 ```
 
-The workspace probes `/health` only when it is served from port 8088, so the static site never
-depends on the service being up.
+The workspace probes `/health` when served or configured, but the static site never
+depends on the backend service being up.
 
 ---
 
 ## Deploying to Vercel
 
-Two configurations are committed so the deployment works whichever root directory you choose.
-Pick **option A** unless you have a reason not to.
+The production site is deployed as a standalone static web application from `website/`.
 
-### Option A — Root Directory = `website` (recommended, simplest)
+### Deployment Steps
 
 1. Import the repository in Vercel.
-2. Project Settings → **Root Directory** → `website`.
-3. Framework Preset: **Other**. Build Command: *(empty)*. Output Directory: *(empty)*.
-4. Deploy. The `vercel.json` in this folder is picked up automatically.
+2. In Project Settings → **Root Directory**, set to: `website`.
+3. Framework Preset: **Other**. Build Command: *(leave empty)*. Output Directory: *(leave empty)*.
+4. Deploy. The `vercel.json` inside `website/` is applied automatically.
 
-`/` serves `index.html`, `/app` serves `app.html`, `/login` serves `login.html`, `404.html` is the
-custom not-found page, and `sitemap.xml` + `robots.txt` are served as static files.
-
-### Option B — Root Directory = `Krishi Setu`
-
-1. Project Settings → **Root Directory** → `Krishi Setu`.
-2. Deploy. `Krishi Setu/vercel.json` rewrites every public route into
-   `website/`. `Krishi Setu/404.html` is the custom not-found page.
-
-> Prefer Option A. The repository path `Krishi Setu/…` contains a space, and Vercel derives
-> serverless-function names from the repository path — with Option B any function inside the
-> project fails the build with "invalid Serverless Function name". This site ships no functions,
-> so it deploys cleanly either way, but Option A keeps the production path space-free.
-
-Both configurations set `charset=utf-8` explicitly on HTML/CSS/JS responses and add baseline
-security headers (`nosniff`, `SAMEORIGIN`, referrer policy, a restrictive permissions policy).
+Routes served:
+- `/` serves `index.html`
+- `/app` serves `app.html` (along with sub-routes `/map`, `/weather`, `/advisory`, `/validation`, `/alerts`, `/provenance`, `/methodology`)
+- `/login` serves `login.html`
+- `404.html` is the custom not-found page
+- `sitemap.xml` and `robots.txt` are served as static files
+- Baseline security headers (`nosniff`, `SAMEORIGIN`, referrer policy, restrictive permissions policy) and UTF-8 charsets are set on all responses.
 
 ### Environment variables (all optional)
 
 No environment variable is required for this deployment: the site is fully static, and the
-Agro-Meteorological Assistant runs on its built-in deterministic interpreter. Because a serverless
-function cannot ship from this repository (see the note at the top), a live AI provider would need
-a proxy hosted elsewhere; set `window.PWI_CONFIG.AI_ENDPOINT` to that proxy's URL in `index.html`
-and `app.html` if you run one. Without it the assistant stays local — no key is ever needed to load
-the site, and no key is ever sent to the browser.
+Agro-Meteorological Assistant runs on its built-in deterministic interpreter. To connect a live
+remote AI proxy, set `window.PWI_CONFIG.AI_ENDPOINT` to that proxy's URL in `index.html`
+and `app.html`. Without it the assistant operates deterministically locally — no API key is
+needed to load the site, and no secret is ever sent to the browser.
 
 ### Social preview and canonical URLs
 

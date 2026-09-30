@@ -1,0 +1,143 @@
+{
+  "version": "advisory-rules-v1",
+  "basis": "Configurable rules layer. Advisory logic lives here, NOT inline in frontend JavaScript. Thresholds are illustrative agronomic starting points and must be reviewed by an agronomist before any field use.",
+  "disclaimer": "Illustrative demo data — advisory thresholds are configurable defaults, not validated agronomic prescriptions.",
+  "p0_variable": "temperature_heat_risk",
+  "p1_variable": "rainfall_risk",
+  "alert_prefix": "Panchayat Weather Alert",
+  "default_risk_message": "No configured threshold crossed for this crop in the selected Panchayat.",
+  "crops": {
+    "tomato": {
+      "label": "Tomato",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 36.0,
+          "trigger": "forecast daily maximum temperature at or above 36 C",
+          "action": "Advance harvest of mature and breaker-stage fruit to the early morning window, irrigate at dawn and again in the late afternoon, and apply a 50 percent shade-net or straw mulch cover over the fruiting rows.",
+          "field_operation": "Shift spraying and transplanting to before 09:00."
+        },
+        "medium": {
+          "threshold_t_max_c": 33.0,
+          "trigger": "forecast daily maximum temperature at or above 33 C",
+          "action": "Irrigate at dawn, mulch the root zone, and monitor for flower drop and blossom-end rot over the next 48 hours.",
+          "field_operation": "Keep afternoon field operations to a minimum."
+        }
+      },
+      "market_hint": "Heat-stressed tomato reaches market earlier and softer — compare the mandi benchmark and institutional buyer offers before committing the lot.",
+      "logistics_hint": "Harvest in the cool window and book a reefer or an early-morning pickup to limit field heat."
+    },
+    "onion": {
+      "label": "Onion",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 37.0,
+          "trigger": "forecast daily maximum temperature at or above 37 C",
+          "action": "Stop irrigation 10 to 14 days before lifting to harden the neck, then lift in the early morning and cure under shade rather than in open sun.",
+          "field_operation": "Suspend mid-day topping and weeding."
+        },
+        "medium": {
+          "threshold_t_max_c": 34.0,
+          "trigger": "forecast daily maximum temperature at or above 34 C",
+          "action": "Maintain light, frequent irrigation and inspect stored bulbs for sunscald and neck rot.",
+          "field_operation": "Prefer evening irrigation."
+        }
+      },
+      "market_hint": "Heat raises storage losses — check the mandi price outlook and consider an earlier sale to a storage-linked buyer.",
+      "logistics_hint": "Prioritise ventilated transport over sealed trucks for cured bulbs."
+    },
+    "grape": {
+      "label": "Grape",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 38.0,
+          "trigger": "forecast daily maximum temperature at or above 38 C",
+          "action": "Run overhead misting or drip in the pre-dawn hours, keep the canopy cover intact, and defer pruning and gibberellic-acid operations by two days.",
+          "field_operation": "Shift all canopy work outside the 11:00 to 16:00 window."
+        },
+        "medium": {
+          "threshold_t_max_c": 35.0,
+          "trigger": "forecast daily maximum temperature at or above 35 C",
+          "action": "Increase irrigation frequency and inspect for berry sunburn on the exposed western side of the canopy.",
+          "field_operation": "Delay any stress-inducing operation to the evening."
+        }
+      },
+      "market_hint": "Check export-grade compliance windows: heat-affected berries often fail grading and are better routed to the domestic channel.",
+      "logistics_hint": "Book reefer capacity before harvest so the fruit does not hold at ambient temperature."
+    },
+    "wheat": {
+      "label": "Wheat",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 35.0,
+          "trigger": "terminal heat stress window (daily maximum at or above 35 C)",
+          "action": "Apply a light irrigation at the grain-filling stage, and plan harvest within the next few days if grain moisture already permits.",
+          "field_operation": "Avoid late top-dressing; finish threshing preparations."
+        },
+        "medium": {
+          "threshold_t_max_c": 32.0,
+          "trigger": "forecast daily maximum temperature at or above 32 C",
+          "action": "Keep the crop irrigated at grain filling and monitor for shrivelled grain.",
+          "field_operation": "Harvest machinery slot to be booked in advance."
+        }
+      },
+      "market_hint": "Check the government mandi feed: early arrivals often clear at a better price than heat-shrivelled late arrivals.",
+      "logistics_hint": "Align threshing and pickup on the same day to avoid double handling."
+    },
+    "soybean": {
+      "label": "Soybean",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 36.0,
+          "trigger": "forecast daily maximum temperature at or above 36 C",
+          "action": "Irrigate the pod-filling block at dawn and defer any inter-cultivation to avoid root damage under heat stress.",
+          "field_operation": "Suspend mid-day weeding."
+        },
+        "medium": {
+          "threshold_t_max_c": 33.0,
+          "trigger": "forecast daily maximum temperature at or above 33 C",
+          "action": "Protect soil moisture with mulch and scout for pod-borer activity, which rises with temperature.",
+          "field_operation": "Scout early morning."
+        }
+      },
+      "market_hint": "Compare the mandi benchmark against institutional oil-mill offers before selling.",
+      "logistics_hint": "Bag and move the lot the same day to preserve moisture content."
+    },
+    "banana": {
+      "label": "Banana",
+      "heat": {
+        "high": {
+          "threshold_t_max_c": 37.0,
+          "trigger": "forecast daily maximum temperature at or above 37 C",
+          "action": "Irrigate heavily in the early morning, protect bunches with leaf cover or bagging, and postpone harvest of green fruit by a day if possible.",
+          "field_operation": "Stop all bunch-handling between 11:00 and 16:00."
+        },
+        "medium": {
+          "threshold_t_max_c": 34.0,
+          "trigger": "forecast daily maximum temperature at or above 34 C",
+          "action": "Maintain irrigation and monitor for leaf scorch and premature ripening.",
+          "field_operation": "Harvest in the coolest part of the day."
+        }
+      },
+      "market_hint": "Heat advances ripening — check the price index and quick-commerce channel demand before holding the lot.",
+      "logistics_hint": "Use a reefer or a pre-cooled truck; ambient transport will accelerate ripening."
+    }
+  },
+  "rainfall_rules": {
+    "p1": true,
+    "note": "Rainfall risk is P1 and ships only if the rainfall residual model validates. Until then the heat-risk advisory is the guaranteed demonstration path.",
+    "high": {
+      "threshold_mm": 50.0,
+      "trigger": "forecast rainfall at or above 50 mm for the day",
+      "action": "Delay harvest and field operations, secure drainage channels, and hold the lot under cover.",
+      "field_operation": "Postpone all field work until rainfall subsides.",
+      "logistics_hint": "Expect rural road access to degrade — reschedule pickup."
+    },
+    "medium": {
+      "threshold_mm": 20.0,
+      "trigger": "forecast rainfall at or above 20 mm for the day",
+      "action": "Cover harvested produce and check drainage around the storage area.",
+      "field_operation": "Harvest early in the day and secure the storage area.",
+      "logistics_hint": "Confirm the pickup vehicle can reach the farm gate."
+    }
+  }
+}

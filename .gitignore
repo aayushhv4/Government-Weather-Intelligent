@@ -9,6 +9,7 @@ node_modules/
 # Logs
 *.log
 npm-debug.log*
+website-server.log
 
 # OS / editor files
 .DS_Store
@@ -18,13 +19,30 @@ desktop.ini
 .idea/
 *.swp
 
-# Local backups (keep on disk, keep out of the repo)
-Krishi Setu Before Public-Dashboard Integration/
-Krishi Setu Before WhatsApp Beta/
-Krishi Setu Structure Backup/
-Krishi Setu Before WhatsApp Role Behavior/
-Krishi Setu Before Final Deployment Prep/
+# Python caches and virtual environments (backend service)
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.venv-weather/
+
+# Generated model / validation artifacts (rebuilt by scripts/train_model.py)
+# A metric must always come from a scripted run, never from a stale committed binary.
+backend/weather/artifacts/
+
+# Local development backups — keep on disk, keep out of the repository
+*.backup-*
+*.backup
+*.zip
 
 # Tool artifacts
 .freebuff/
 .playtest/
+
+# Temporary / scratch files
+*.tmp
+*.bak
+
+# The offline frontend snapshot is a COMMITTED asset (not a build output).
+# The static site must run with no build step, so data/weather-bundle.js is tracked.
+# Do NOT add website/data/ to this file.

@@ -1,0 +1,31 @@
+{
+  "block_id": "LGD-271012",
+  "name": "Dindori",
+  "district": "Nashik",
+  "state": "Maharashtra",
+  "bbox": [73.8, 20.16, 73.94, 20.3],
+  "boundary_source": "illustrative-schematic-grid-pilot-271012 (NOT official)",
+  "boundary_provenance": {
+    "source_type": "simulated_demo",
+    "source_name": "Illustrative pilot grid (schematic cell boundaries)",
+    "source_url": "n/a - replace with India Geodata / DataMeet GP GeoJSON",
+    "license": "n/a - schematic placeholder",
+    "is_live": false,
+    "note": "NOT official Gram Panchayat boundaries and NOT community-mapped boundaries. A regular grid over the pilot block envelope is used so the pipeline can run; every area weight and map polygon is illustrative. Drop a real GeoJSON at data/boundaries/LGD-271012.geojson to replace it."
+  },
+  "selection_rationale": "PRD S22 criteria: (a) 5-15 Panchayats - 11 are defined here; (b) accessible geometry - a single compact envelope inside one taluka; (c) visible elevation/terrain variation - 520 m to 968 m across the block, which is what makes the downscaling claim demonstrable; (d) access to historical data - the block sits inside the Nashik agrometeorological belt where ERA5-Land/CHIRPS tiles and IMD gridded products are routinely staged; (e) nearby observations - IMD AWS/ARG stations exist in the Nashik district (Probe via Track B). The block id LGD-271012 is the one used in the PRD API example; adopting it keeps contract and implementation aligned. IMPORTANT: the Panchayat names, LGD codes, cell polygons and terrain attributes below are ILLUSTRATIVE - they are not a verified official administrative extract, and the boundary source is disclosed as schematic everywhere in the product.",
+  "elevation_reference": "zbar_block is computed as the area-weighted mean elevation of the Panchayats below, per PRD S7.",
+  "panchayats": [
+    { "panchayat_id": "LGD-271033", "lgd_code": "271033", "name": "Shinde",         "cell": [73.8,        20.16,  73.846667, 20.195], "elevation_m": 545, "slope_deg": 3.2,  "aspect_deg": 95,  "land_cover": "cropland",    "ndvi": 0.41 },
+    { "panchayat_id": "LGD-271034", "lgd_code": "271034", "name": "Vani",           "cell": [73.846667,   20.16,  73.893333, 20.195], "elevation_m": 610, "slope_deg": 5.4,  "aspect_deg": 120, "land_cover": "plantation",  "ndvi": 0.48 },
+    { "panchayat_id": "LGD-271035", "lgd_code": "271035", "name": "Rajur Bahula",   "cell": [73.893333,   20.16,  73.94,     20.195], "elevation_m": 690, "slope_deg": 7.1,  "aspect_deg": 150, "land_cover": "horticulture","ndvi": 0.44 },
+    { "panchayat_id": "LGD-271036", "lgd_code": "271036", "name": "Pimpalgaon",     "cell": [73.8,        20.195, 73.846667, 20.23],  "elevation_m": 520, "slope_deg": 2.6,  "aspect_deg": 80,  "land_cover": "cropland",    "ndvi": 0.52 },
+    { "panchayat_id": "LGD-271037", "lgd_code": "271037", "name": "Talegaon",       "cell": [73.846667,   20.195, 73.893333, 20.23],  "elevation_m": 655, "slope_deg": 6.3,  "aspect_deg": 210, "land_cover": "cropland",    "ndvi": 0.38 },
+    { "panchayat_id": "LGD-271038", "lgd_code": "271038", "name": "Janori",         "cell": [73.893333,   20.195, 73.94,     20.23],  "elevation_m": 760, "slope_deg": 9.8,  "aspect_deg": 240, "land_cover": "forest",      "ndvi": 0.61 },
+    { "panchayat_id": "LGD-271039", "lgd_code": "271039", "name": "Mohadi",         "cell": [73.8,        20.23,  73.846667, 20.265], "elevation_m": 720, "slope_deg": 8.4,  "aspect_deg": 300, "land_cover": "plantation",  "ndvi": 0.46 },
+    { "panchayat_id": "LGD-271040", "lgd_code": "271040", "name": "Dindori Rural",  "cell": [73.846667,   20.23,  73.893333, 20.265], "elevation_m": 835, "slope_deg": 11.2, "aspect_deg": 330, "land_cover": "forest",      "ndvi": 0.58 },
+    { "panchayat_id": "LGD-271041", "lgd_code": "271041", "name": "Nanashi",        "cell": [73.893333,   20.23,  73.94,     20.265], "elevation_m": 910, "slope_deg": 13.6, "aspect_deg": 30,  "land_cover": "horticulture","ndvi": 0.33 },
+    { "panchayat_id": "LGD-271042", "lgd_code": "271042", "name": "Ambegaon",       "cell": [73.8,        20.265, 73.846667, 20.3],   "elevation_m": 880, "slope_deg": 12.4, "aspect_deg": 60,  "land_cover": "forest",      "ndvi": 0.55 },
+    { "panchayat_id": "LGD-271043", "lgd_code": "271043", "name": "Karanjwan",      "cell": [73.846667,   20.265, 73.893333, 20.3],   "elevation_m": 968, "slope_deg": 14.1, "aspect_deg": 100, "land_cover": "plantation",  "ndvi": 0.42 }
+  ]
+}

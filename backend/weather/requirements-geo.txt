@@ -1,0 +1,17 @@
+# Optional geospatial extras (PRD S7 tech stack).
+#
+# Only needed once real reanalysis / raster products are staged and the
+# interface-only adapters in ksweather/adapters/ (era5land.py, chirps) are
+# backed by actual NetCDF/GeoTIFF readers. The core service, its tests and the
+# demo all run without these.
+#
+# Install with:  pip install -r requirements-geo.txt
+#
+# Versions intentionally left unpinned here because wheel availability varies
+# by Python version and platform; pin them in the deployment image once the
+# real ingest path is exercised.
+
+geopandas>=0.14
+rasterio>=1.3
+xarray>=2024.1
+netCDF4>=1.6
