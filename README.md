@@ -1,4 +1,4 @@
-﻿# Panchayat Weather Intelligence
+# Panchayat Weather Intelligence
 
 **Localized Agro-Meteorological Decision Support Platform**
 
@@ -6,7 +6,7 @@
 
 ---
 
-Panchayat Weather Intelligence is a localized agro-meteorological decision-support platform that converts Block-level weather information into Panchayat-level estimates using geospatial predictors and machine-learning residual correction, validates the downscaling against explicit baselines, estimates indicative uncertainty, and converts localized weather risk into crop-specific advisory support.
+A Panchayat-level weather intelligence platform that downscales Block-level forecasts using geospatial and machine-learning methods and converts localized weather information into agricultural decision support.
 
 **This is not an official operational IMD forecasting service.** It is an independent research prototype built in the context of the Government/IMD problem statement SIH26074.
 
@@ -94,53 +94,60 @@ where `f_T` is a Random Forest trained on `(reference_panchayat − block)` with
 
 ```
 panchayat-weather-intelligence/
-├── website/                        ← Production static frontend (Vercel root)
+├── website/                        ← Production static frontend (Vercel deployment)
 │   ├── index.html                  Public home page
 │   ├── app.html                    Weather intelligence workspace
-│   ├── login.html                  Optional sign-in
+│   ├── login.html                  Optional sign-in & demo access
 │   ├── 404.html                    Custom not-found page
-│   ├── robots.txt
-│   ├── sitemap.xml
-│   ├── favicon.svg
-│   ├── vercel.json                 Deployment config (rewrites + security headers)
+│   ├── robots.txt                  Search engine crawler policy
+│   ├── sitemap.xml                 Static XML sitemap
+│   ├── favicon.svg                 Platform vector mark
+│   ├── vercel.json                 Vercel routing (Option A root)
 │   ├── css/
-│   │   ├── website.css             Design system (tokens, dual themes)
-│   │   ├── site.css                Production layer
+│   │   ├── website.css             Design system tokens & dual themes
+│   │   ├── site.css                Production layout styling
 │   │   └── vendor/leaflet.css
 │   ├── js/
-│   │   ├── site-config.js          Origin / social URL config
-│   │   ├── home.js                 Home page behaviour
-│   │   ├── website.js              Workspace coordinator (routing, theme, i18n)
+│   │   ├── site-config.js          Origin / social metadata config
+│   │   ├── home.js                 Public homepage behaviour
+│   │   ├── website.js              Workspace coordinator & state management
 │   │   ├── weather.js              Downscaling state + bundle fallback
-│   │   ├── pilot-geo.js            Panchayat tessellation + colour scales
-│   │   ├── map.js                  Leaflet map, baselines, detail panel
-│   │   ├── advisory.js             Crop heat-stress rules + action chain
-│   │   ├── ai.js                   Agro-Meteorological Assistant
-│   │   ├── table-stack.js          Mobile table reflow utility
-│   │   ├── auth.js                 Optional local accounts + guest session
+│   │   ├── pilot-geo.js            Panchayat geometry & colour ramps
+│   │   ├── map.js                  Interactive Leaflet map & detail inspector
+│   │   ├── advisory.js             Crop heat-stress threshold rules
+│   │   ├── ai.js                   Agro-Meteorological Assistant & fallback
+│   │   ├── table-stack.js          Mobile responsive table utility
+│   │   ├── auth.js                 Local browser accounts & guest session
 │   │   └── vendor/leaflet.js
 │   ├── data/
-│   │   └── weather-bundle.js       Offline snapshot (committed, no build step)
+│   │   └── weather-bundle.js       Committed offline snapshot (no build step)
 │   └── assets/
 │       └── hero-farmer-field.jpg
 │
 ├── backend/
 │   ├── weather/                    ← FastAPI downscaling service (SIH26074)
-│   │   ├── ksweather/              Python package (pipeline, baselines, model, advisory…)
+│   │   ├── ksweather/              Python downscaling engine package
 │   │   ├── scripts/                train_model.py, export_product_bundle.py
-│   │   ├── tests/                  86 pytest tests
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt        Pinned core deps
+│   │   ├── tests/                  86 pytest verification tests
+│   │   ├── Dockerfile              Containerized service configuration
+│   │   ├── requirements.txt        Pinned runtime dependencies
 │   │   ├── requirements-geo.txt    Optional geospatial extras
-│   │   └── README.md               Engineering contract + provenance rules
+│   │   └── README.md               Scientific contract & API specification
 │   └── database/
 │       └── 001_weather_intelligence.sql  Supabase schema (5 weather tables)
+│
+├── docs/
+│   ├── ARCHITECTURE.md             Platform architecture & component design
+│   ├── METHODOLOGY.md              Scientific downscaling equations & validation
+│   └── DEPLOYMENT.md               Deployment guide for Vercel & Docker
 │
 ├── tests/
 │   ├── test-production-website.js  Headless Puppeteer verification (10 checks)
 │   └── package.json
 │
+├── .env.example
 ├── .gitignore
+├── vercel.json                     Vercel compatibility config (Option B root)
 └── README.md
 ```
 
