@@ -4,6 +4,7 @@
 |---|---|
 | `ARCHITECTURE.md` | How the product is built: frontend, Supabase, auth, data flows, roles |
 | `API.md` | Supabase schema/API surface and edge-function behaviour |
+| `WEATHER_INTELLIGENCE.md` | **SIH26074**: deployment, environment, licences, claim discipline and what is real vs simulated in the Panchayat weather downscaling module. Engineering contract: `backend/weather/README.md` |
 | `SETUP.md` | Prerequisites, Supabase setup, running, env vars, deployment |
 | `DEPLOYMENT.md` | **Deployment guide**: exact Vercel settings, Supabase Site URL / Redirect URLs, config points |
 | `FINAL_RELEASE_REPORT.md` | SIH submission summary + quality evidence |

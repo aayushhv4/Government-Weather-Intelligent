@@ -28,3 +28,24 @@ Krishi Setu Structure Backup/
 # Tool artifacts
 .freebuff/
 .playtest/
+
+# Weather Intelligence service (backend/weather)
+# Local virtualenvs and Python caches
+.venv/
+.venv-weather/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated model / validation artifacts — rebuilt by
+# `python backend/weather/scripts/train_model.py`. Not committed: a metric must
+# always come from a scripted run against the current code, never from a stale
+# binary in the repository.
+backend/weather/artifacts/
+
+# The standalone Panchayat Weather Intelligence website lives in ../website
+# (a top-level folder at the git root — the deployment root must contain no spaces).
+# Nothing there is ignored, including data/weather-bundle.js: the published site
+# must run with no build step, so the offline snapshot is a committed asset rather
+# than a build output. Regenerate it with
+# `python backend/weather/scripts/export_frontend_bundle.py`.

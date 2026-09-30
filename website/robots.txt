@@ -1,0 +1,8 @@
+# Panchayat Weather Intelligence — crawler policy
+# Public information pages and the weather workspace are open.
+
+User-agent: *
+Allow: /
+
+# Static sitemap shipped with the site (no serverless function involved).
+Sitemap: /sitemap.xml

@@ -17,6 +17,7 @@ Indian farmers typically sell at the nearest APMC mandi with little price transp
 - **Buyer workspace** — RFQs & reverse auctions, lot inspection, make-offer, orders, price index, verified supplier directory, cold-chain booking, escrow & credit line
 - **Supervisor workspace** — user/seller/buyer registries, listing & purchase oversight, risk alerts, investigation desk, immutable audit trail, platform settings
 - **Platform features** — login (demo personas), farmer/buyer/supervisor mode switching, 11-language i18n (Google Translate fallback), light/dark theme with system preference, high-contrast sunlight mode, font sizing, WhatsApp alerts (local toggle), custom 404 page
+- **Panchayat Weather Intelligence (SIH26074)** — block-to-Panchayat temperature downscaling with a Random Forest residual model, named B1/B2 baselines, mean-preserving area-weighted reconciliation, indicative (uncalibrated) P10–P90 ranges, a blocked-holdout validation screen, a heat-risk crop advisory and a Market/Logistics hand-off. Validation in this build is a **hindcast reconstruction — not operational forecast skill**, and the UI says so. See `docs/WEATHER_INTELLIGENCE.md` and `backend/weather/README.md`.
 
 ## Technology stack
 
@@ -25,6 +26,7 @@ Indian farmers typically sell at the nearest APMC mandi with little price transp
 | Frontend | Single-file HTML5 + vanilla JavaScript + CSS (no build step, no framework) |
 | Charts / viz | Inline SVG + CSS (no chart library) |
 | Backend | Supabase (optional; the app auto-falls back to `DEMO_MODE` with mock data when the key is invalid or offline) |
+| Weather service | Python 3.11 + FastAPI + scikit-learn (`backend/weather/`), deployed separately; deterministic seed 42, pinned deps |
 | Database | PostgreSQL via Supabase (migrations in `backend/supabase/migrations`) |
 | Edge functions | `refresh-gov-feed` — server-side refresh of the government mandi price cache |
 | External assets | Supabase JS CDN, Unsplash imagery, Google Translate (runtime fallback for dynamic text) |
@@ -37,6 +39,7 @@ Indian farmers typically sell at the nearest APMC mandi with little price transp
 | **Premium direction** (comparison) | `frontend/public-site/premium-version/index.html` | Same content, animated/interactive presentation; light + dark. |
 | **Authenticated platform** | `frontend/LAST_GOV_API_GRAPHS_FINAL.html` | The full dashboard (farmer / buyer / supervisor) with login, Supabase session, marketplace, finance, logistics. |
 | **WhatsApp Beta** (prototype) | `frontend/whatsapp-beta/index.html` | Simplified chat-style interface for farmers — clearly labelled SIH prototype; all actions simulated. |
+| **Weather Intelligence service** | `backend/weather/` | FastAPI + scikit-learn downscaling engine (SIH26074). Run commands, API contract and provenance rules in its `README.md`. |
 
 The product is **front-door first**: opening the app directly without a session routes you to the public homepage; "Open Platform" shows the existing login for guests, while logged-in users go straight to the dashboard (one Supabase session — no second login).
 

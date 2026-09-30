@@ -1,10 +1,14 @@
 /**
  * Agro-Meteorological Assistant
  *
- * Architecture: browser → serverless proxy (default /api/assistant) → AI provider, with a
- * deterministic local interpreter that answers whenever the provider is not configured, not
- * reachable, or slow. The panel therefore never sits on an indefinite "Connecting…" state, and the
- * page never waits on the assistant to finish loading.
+ * Architecture: a deterministic local interpreter answers every question from the structured
+ * application state, so the panel never sits on an indefinite "Connecting…" state and the page
+ * never waits on the assistant to finish loading. A remote AI proxy is optional: this repository
+ * cannot ship serverless functions (Vercel rejects function names derived from the repo path,
+ * which contains a space), so none is deployed. To attach a hosted proxy later, set
+ * window.PWI_CONFIG.AI_ENDPOINT to its URL — the client then POSTs {question, context, history}
+ * and uses the reply whenever it arrives, still falling back to the local interpreter on any
+ * failure or timeout.
  *
  * Safeguards:
  *   - The assistant receives only structured application context and must not invent weather values.
@@ -274,9 +278,12 @@
 
     // 5. Attempt the serverless endpoint call. Set window.PWI_CONFIG.AI_ENDPOINT = null to skip it
     //    entirely (for example when the site is served as plain static files with no functions).
+    // No remote proxy is configured by default (this deployment is fully static), so the
+    // deterministic interpreter answers immediately. Setting window.PWI_CONFIG.AI_ENDPOINT
+    // to a proxy URL re-enables the remote path above.
     const aiEndpoint = (window.PWI_CONFIG && window.PWI_CONFIG.AI_ENDPOINT !== undefined)
       ? window.PWI_CONFIG.AI_ENDPOINT
-      : '/api/assistant';
+      : null;
 
     if (!aiEndpoint || endpointUnavailable) {
       hideTyping();
