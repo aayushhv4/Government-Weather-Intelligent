@@ -63,9 +63,14 @@
     }
   };
 
-  var TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  var TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  var TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
+  // Keyless public tile sources — no API key can ever break the basemap.
+  // Light: OpenStreetMap standard raster tiles (osm.org tile usage policy applies).
+  // Dark:  Esri World Imagery (public ArcGIS Online tile service), which reads well
+  //        under heat-coloured polygons; OSM has no official dark style.
+  var TILE_LIGHT = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  var TILE_DARK = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  var TILE_ATTRIBUTION_LIGHT = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+  var TILE_ATTRIBUTION_DARK = 'Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &mdash; Source: Esri, Maxar, Earthstar Geographics';
 
   var state = {
     map: null,
@@ -265,6 +270,10 @@
     return theme === 'dark' ? TILE_DARK : TILE_LIGHT;
   }
 
+  function tileAttributionFor(theme) {
+    return theme === 'dark' ? TILE_ATTRIBUTION_DARK : TILE_ATTRIBUTION_LIGHT;
+  }
+
   function ensureBasemap(theme) {
     if (!state.map) return;
     state.theme = theme === 'dark' ? 'dark' : 'light';
@@ -276,7 +285,7 @@
     var layer = window.L.tileLayer(tileUrlFor(state.theme), {
       maxZoom: 18,
       minZoom: 5,
-      attribution: TILE_ATTRIBUTION,
+      attribution: tileAttributionFor(state.theme),
       crossOrigin: true
     });
     var errors = 0;
