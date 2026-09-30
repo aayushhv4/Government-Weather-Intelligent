@@ -24,7 +24,7 @@ The configuration inside `website/vercel.json` applies automatically:
 
 ### Option B: Deploy from Repository Root (`.`)
 If the Vercel project is imported with the default Root Directory (`.`):
-- The root [vercel.json](file:///c:/Users/ANAND/OneDrive/Desktop/krishisetu/vercel.json) transparently proxies requests to `website/index.html`, `website/app.html`, `website/login.html`, and all static subdirectories (`/css/*`, `/js/*`, `/data/*`, `/assets/*`).
+- The root [vercel.json](../vercel.json) transparently proxies requests to `website/index.html`, `website/app.html`, `website/login.html`, and all static subdirectories (`/css/*`, `/js/*`, `/data/*`, `/assets/*`).
 - No build command or configuration change required.
 
 ---
